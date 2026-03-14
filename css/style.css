@@ -484,62 +484,16 @@ button.small {
 
 .toolbar-group { display: contents; }
 
-/* === Data table (virtual scroll) === */
+/* === AG Grid data table === */
 
 #table-container {
-    flex: 1;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
     font-family: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;
     font-size: 12px;
 }
 
-.dt-header {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-dim);
-    font-weight: 600;
-    padding: 4px 0;
-    flex-shrink: 0;
-}
-.dt-viewport {
-    flex: 1;
-    overflow-y: auto;
-    position: relative;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-}
-.dt-viewport::-webkit-scrollbar { width: 6px; }
-.dt-viewport::-webkit-scrollbar-track { background: transparent; }
-.dt-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-.dt-rows { position: absolute; top: 0; left: 0; right: 0; }
-
-.dt-row {
-    display: flex;
-    position: absolute;
-    left: 0; right: 0;
-    height: 26px;
-    align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.dt-row:hover { background: rgba(255,255,255,0.04); }
-.dt-loading { color: var(--text-dim); }
-
-.dt-cell {
-    padding: 0 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.dt-num { width: 60px; min-width: 60px; color: var(--text-dim); text-align: right; }
-.dt-time { width: 100px; min-width: 100px; }
-.dt-ch1 { flex: 1; color: var(--ch1-color); }
-.dt-ch2 { flex: 1; color: var(--ch2-color); }
+.ag-ch1-cell { color: var(--ch1-color) !important; }
+.ag-ch2-cell { color: var(--ch2-color) !important; }
+.ag-row-number { color: var(--text-dim) !important; font-variant-numeric: tabular-nums; }
 
 /* === Custom tooltips === */
 
@@ -978,11 +932,6 @@ body.theme-light .panel-resize-handle.dragging {
 
 /* Scrollbar */
 body.theme-light .panel-left { scrollbar-color: #c0c0c0 transparent; }
-
-/* Data table */
-body.theme-light .dt-row { border-bottom-color: #f0f0f0; }
-body.theme-light .dt-row:hover { background: rgba(43,87,154,0.04); }
-body.theme-light .dt-header { border-bottom-color: #d0d0d0; }
 
 /* Tooltips */
 body.theme-light .custom-tooltip {

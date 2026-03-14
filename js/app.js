@@ -103,6 +103,7 @@ class App {
             document.body.classList.remove("theme-light");
             if (icon) icon.className = "fa-solid fa-moon";
         }
+        if (this.dataTable) this.dataTable.updateTheme();
     }
 
     // --- First-run welcome dialog ---
@@ -387,7 +388,7 @@ class App {
 
         const isGraph = mode === "graph";
         graphEl.style.display = isGraph ? "" : "none";
-        tableEl.style.display = isGraph ? "none" : "flex";
+        tableEl.style.display = isGraph ? "none" : "";
         graphCtrl.style.display = isGraph ? "contents" : "none";
         tableCtrl.style.display = isGraph ? "none" : "contents";
 

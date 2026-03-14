@@ -1,238 +1,336 @@
 /**
- * Virtual-scrolling data table for viewing measurement samples.
+ * Spreadsheet-style data table using AG Grid Community.
  *
  * Two data sources:
  *   - "live": reads from the in-memory graph data arrays (rolling window)
- *   - "session": reads from IndexedDB via SampleStore.getPage(), using a
- *     primary-key index for O(1) random page access
- *
- * Only the visible rows (plus a small buffer) are in the DOM at any time,
- * so even a 24hr / 800K+ row session stays responsive.
+ *   - "session": reads from IndexedDB via SampleStore, using AG Grid's
+ *     Infinite Row Model for seamless virtual scrolling over 800K+ rows
  */
 
-const ROW_HEIGHT = 26;
-const PAGE_SIZE = 100;
-const BUFFER_ROWS = 20;
-const MAX_CACHED_PAGES = 50;
+const PAGE_SIZE = 200;
 
 export class DataTable {
     constructor(container) {
         this.container = container;
-
-        this._mode = "live";       // "live" | "session"
-        this._liveData = null;     // ref to graph's [timestamps, ch1, ch2]
-        this._store = null;        // SampleStore instance
+        this._mode = "live";
+        this._liveData = null;
+        this._store = null;
         this._sessionId = null;
         this._totalRows = 0;
-
-        // Page cache for session mode  (pageIdx → row[])
-        this._pageCache = new Map();
-        this._pendingPages = new Set();
+        this._gridApi = null;
+        this._liveRowData = [];
+        this._lastLiveLen = 0;
 
         this._build();
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  DOM                                                                */
-    /* ------------------------------------------------------------------ */
-
     _build() {
         this.container.innerHTML = "";
 
-        this._header = document.createElement("div");
-        this._header.className = "dt-header";
-        this._header.innerHTML =
-            `<div class="dt-cell dt-num">#</div>` +
-            `<div class="dt-cell dt-time">Time (s)</div>` +
-            `<div class="dt-cell dt-ch1">CH1</div>` +
-            `<div class="dt-cell dt-ch2">CH2</div>`;
-        this.container.appendChild(this._header);
+        this._gridDiv = document.createElement("div");
+        this._gridDiv.style.width = "100%";
+        this._gridDiv.style.height = "100%";
+        this._gridDiv.style.flex = "1";
+        this.container.appendChild(this._gridDiv);
 
-        this._viewport = document.createElement("div");
-        this._viewport.className = "dt-viewport";
-        this.container.appendChild(this._viewport);
-
-        this._spacer = document.createElement("div");
-        this._spacer.className = "dt-spacer";
-        this._viewport.appendChild(this._spacer);
-
-        this._rowsDiv = document.createElement("div");
-        this._rowsDiv.className = "dt-rows";
-        this._viewport.appendChild(this._rowsDiv);
-
-        this._viewport.addEventListener("scroll", () => this._render(), { passive: true });
+        this._initGrid();
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Data sources                                                       */
-    /* ------------------------------------------------------------------ */
+    _initGrid() {
+        const isDark = !document.body.classList.contains("theme-light");
 
-    /** Attach the in-memory graph data arrays for live view. */
+        const gridOptions = {
+            columnDefs: [
+                {
+                    headerName: "#",
+                    field: "rowNum",
+                    width: 80,
+                    minWidth: 60,
+                    pinned: "left",
+                    sortable: false,
+                    filter: false,
+                    suppressMovable: true,
+                    cellClass: "ag-row-number",
+                },
+                {
+                    headerName: "Time (s)",
+                    field: "time",
+                    width: 130,
+                    minWidth: 90,
+                    valueFormatter: (p) => p.value != null ? p.value.toFixed(4) : "...",
+                    filter: "agNumberColumnFilter",
+                },
+                {
+                    headerName: "CH1",
+                    field: "ch1",
+                    flex: 1,
+                    minWidth: 110,
+                    valueFormatter: (p) => this._fmt(p.value),
+                    cellClass: "ag-ch1-cell",
+                    filter: "agNumberColumnFilter",
+                },
+                {
+                    headerName: "CH2",
+                    field: "ch2",
+                    flex: 1,
+                    minWidth: 110,
+                    valueFormatter: (p) => this._fmt(p.value),
+                    cellClass: "ag-ch2-cell",
+                    filter: "agNumberColumnFilter",
+                },
+            ],
+            defaultColDef: {
+                sortable: true,
+                resizable: true,
+                suppressHeaderMenuButton: false,
+            },
+            rowSelection: "multiple",
+            enableCellTextSelection: true,
+            ensureDomOrder: true,
+            animateRows: false,
+            suppressColumnVirtualisation: true,
+            rowHeight: 26,
+            headerHeight: 30,
+            // Start in client-side mode for live data
+            rowModelType: "clientSide",
+            getRowId: (params) => String(params.data.rowNum),
+            theme: agGrid.themeQuartz.withParams(isDark ? {
+                backgroundColor: "#1e2a47",
+                foregroundColor: "#e0e0e0",
+                headerBackgroundColor: "#16213e",
+                headerForegroundColor: "#8899aa",
+                borderColor: "#2a3a5c",
+                rowHoverColor: "rgba(255,255,255,0.04)",
+                selectedRowBackgroundColor: "rgba(61,106,255,0.15)",
+                oddRowBackgroundColor: "rgba(255,255,255,0.02)",
+                columnBorder: true,
+                wrapperBorderRadius: "0px",
+                headerColumnBorderHeight: "100%",
+                headerColumnBorder: true,
+            } : {
+                backgroundColor: "#ffffff",
+                foregroundColor: "#1a1a1a",
+                headerBackgroundColor: "#f5f6fa",
+                headerForegroundColor: "#616161",
+                borderColor: "#e0e0e0",
+                rowHoverColor: "rgba(43,87,154,0.04)",
+                selectedRowBackgroundColor: "rgba(43,87,154,0.1)",
+                oddRowBackgroundColor: "#fafbfc",
+                columnBorder: true,
+                wrapperBorderRadius: "0px",
+                headerColumnBorderHeight: "100%",
+                headerColumnBorder: true,
+            }),
+        };
+
+        this._gridApi = agGrid.createGrid(this._gridDiv, gridOptions);
+    }
+
+    /** Recreate grid when theme changes */
+    updateTheme() {
+        const scrollPos = this._gridDiv.parentElement?.scrollTop || 0;
+        const mode = this._mode;
+        const liveData = this._liveData;
+        const store = this._store;
+        const sessionId = this._sessionId;
+
+        this._build();
+
+        if (mode === "live" && liveData) {
+            this.setLiveSource(liveData);
+        } else if (mode === "session" && store && sessionId) {
+            this.setSessionSource(store, sessionId);
+        }
+    }
+
+    /** Attach in-memory graph data for live view. */
     setLiveSource(data) {
         this._mode = "live";
         this._liveData = data;
         this._store = null;
         this._sessionId = null;
-        this._pageCache.clear();
-        this.refresh();
+        this._lastLiveLen = 0;
+        this._liveRowData = [];
+
+        // If grid is in infinite mode, recreate it in client-side mode
+        if (this._gridApi) {
+            this._gridApi.setGridOption("rowData", []);
+        }
     }
 
-    /** Attach an IndexedDB session.  Builds a primary-key index first. */
+    /** Attach an IndexedDB session with infinite scrolling. */
     async setSessionSource(store, sessionId) {
         this._mode = "session";
         this._store = store;
         this._sessionId = sessionId;
         this._liveData = null;
-        this._pageCache.clear();
         this._totalRows = await store.getSessionSampleCount(sessionId);
-        this._spacer.style.height = `${this._totalRows * ROW_HEIGHT}px`;
-        this._viewport.scrollTop = 0;
-        this._render();
+
+        // Rebuild grid in infinite row model mode
+        this._gridDiv.innerHTML = "";
+        const isDark = !document.body.classList.contains("theme-light");
+
+        const gridOptions = {
+            columnDefs: [
+                {
+                    headerName: "#",
+                    field: "rowNum",
+                    width: 80,
+                    minWidth: 60,
+                    pinned: "left",
+                    sortable: false,
+                    filter: false,
+                    suppressMovable: true,
+                    cellClass: "ag-row-number",
+                },
+                {
+                    headerName: "Time (s)",
+                    field: "time",
+                    width: 130,
+                    minWidth: 90,
+                    valueFormatter: (p) => p.value != null ? p.value.toFixed(4) : "",
+                },
+                {
+                    headerName: "CH1",
+                    field: "ch1",
+                    flex: 1,
+                    minWidth: 110,
+                    valueFormatter: (p) => this._fmt(p.value),
+                    cellClass: "ag-ch1-cell",
+                },
+                {
+                    headerName: "CH2",
+                    field: "ch2",
+                    flex: 1,
+                    minWidth: 110,
+                    valueFormatter: (p) => this._fmt(p.value),
+                    cellClass: "ag-ch2-cell",
+                },
+            ],
+            defaultColDef: {
+                sortable: false,
+                resizable: true,
+            },
+            rowSelection: "multiple",
+            enableCellTextSelection: true,
+            ensureDomOrder: true,
+            animateRows: false,
+            rowHeight: 26,
+            headerHeight: 30,
+            rowModelType: "infinite",
+            cacheBlockSize: PAGE_SIZE,
+            maxBlocksInCache: 50,
+            infiniteInitialRowCount: this._totalRows,
+            datasource: this._createSessionDatasource(store, sessionId),
+            theme: agGrid.themeQuartz.withParams(isDark ? {
+                backgroundColor: "#1e2a47",
+                foregroundColor: "#e0e0e0",
+                headerBackgroundColor: "#16213e",
+                headerForegroundColor: "#8899aa",
+                borderColor: "#2a3a5c",
+                rowHoverColor: "rgba(255,255,255,0.04)",
+                selectedRowBackgroundColor: "rgba(61,106,255,0.15)",
+                oddRowBackgroundColor: "rgba(255,255,255,0.02)",
+                columnBorder: true,
+                wrapperBorderRadius: "0px",
+                headerColumnBorderHeight: "100%",
+                headerColumnBorder: true,
+            } : {
+                backgroundColor: "#ffffff",
+                foregroundColor: "#1a1a1a",
+                headerBackgroundColor: "#f5f6fa",
+                headerForegroundColor: "#616161",
+                borderColor: "#e0e0e0",
+                rowHoverColor: "rgba(43,87,154,0.04)",
+                selectedRowBackgroundColor: "rgba(43,87,154,0.1)",
+                oddRowBackgroundColor: "#fafbfc",
+                columnBorder: true,
+                wrapperBorderRadius: "0px",
+                headerColumnBorderHeight: "100%",
+                headerColumnBorder: true,
+            }),
+        };
+
+        this._gridApi = agGrid.createGrid(this._gridDiv, gridOptions);
     }
 
-    /** Call on a timer to push new live rows into view. */
+    _createSessionDatasource(store, sessionId) {
+        const self = this;
+        return {
+            getRows(params) {
+                const offset = params.startRow;
+                const limit = params.endRow - params.startRow;
+
+                store.getPage(sessionId, offset, limit).then(rows => {
+                    const mapped = rows.map((r, i) => ({
+                        rowNum: offset + i + 1,
+                        time: r.t,
+                        ch1: r.ch1,
+                        ch2: r.ch2,
+                    }));
+
+                    const lastRow = (offset + mapped.length >= self._totalRows)
+                        ? self._totalRows : -1;
+                    params.successCallback(mapped, lastRow);
+                }).catch(() => {
+                    params.failCallback();
+                });
+            }
+        };
+    }
+
+    /** Push new live rows — called on a 200ms timer. */
     refresh() {
-        if (this._mode !== "live" || !this._liveData) return;
+        if (this._mode !== "live" || !this._liveData || !this._gridApi) return;
 
-        this._totalRows = this._liveData[0].length;
-        this._spacer.style.height = `${this._totalRows * ROW_HEIGHT}px`;
+        const d = this._liveData;
+        const len = d[0].length;
+        if (len === this._lastLiveLen) return;
 
-        // Auto-scroll if user is near the bottom
-        const vp = this._viewport;
-        const nearBottom = vp.scrollHeight - vp.scrollTop - vp.clientHeight < ROW_HEIGHT * 3;
-        this._render();
-        if (nearBottom && this._totalRows > 0) {
-            vp.scrollTop = vp.scrollHeight;
+        // Build row data for new entries
+        for (let i = this._lastLiveLen; i < len; i++) {
+            this._liveRowData.push({
+                rowNum: i + 1,
+                time: d[0][i],
+                ch1: d[1][i],
+                ch2: d[2][i],
+            });
         }
+
+        // Trim if graph data was trimmed (rolling window)
+        const trimmed = this._liveRowData.length - len;
+        if (trimmed > 0) {
+            this._liveRowData.splice(0, trimmed);
+            // Renumber
+            for (let i = 0; i < this._liveRowData.length; i++) {
+                this._liveRowData[i].rowNum = i + 1;
+            }
+        }
+
+        this._lastLiveLen = len;
+
+        // Use transaction for efficient batch update
+        this._gridApi.setGridOption("rowData", this._liveRowData);
+
+        // Auto-scroll to bottom
+        this._gridApi.ensureIndexVisible(this._liveRowData.length - 1, "bottom");
     }
 
     clear() {
-        this._totalRows = 0;
-        this._pageCache.clear();
-        this._spacer.style.height = "0";
-        this._rowsDiv.innerHTML = "";
+        this._liveRowData = [];
+        this._lastLiveLen = 0;
+        if (this._gridApi) {
+            this._gridApi.setGridOption("rowData", []);
+        }
     }
 
     destroy() {
+        if (this._gridApi) {
+            this._gridApi.destroy();
+            this._gridApi = null;
+        }
         this.container.innerHTML = "";
     }
-
-    /* ------------------------------------------------------------------ */
-    /*  Rendering (virtual scroll)                                         */
-    /* ------------------------------------------------------------------ */
-
-    _render() {
-        const scrollTop = this._viewport.scrollTop;
-        const viewH = this._viewport.clientHeight;
-        if (viewH === 0 || this._totalRows === 0) {
-            this._rowsDiv.innerHTML = "";
-            return;
-        }
-
-        const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS);
-        const last = Math.min(this._totalRows - 1,
-            Math.ceil((scrollTop + viewH) / ROW_HEIGHT) + BUFFER_ROWS);
-
-        if (this._mode === "live") {
-            this._renderLive(first, last);
-        } else {
-            this._renderSession(first, last);
-        }
-    }
-
-    _renderLive(first, last) {
-        const d = this._liveData;
-        if (!d || d[0].length === 0) { this._rowsDiv.innerHTML = ""; return; }
-
-        const parts = [];
-        const end = Math.min(last, d[0].length - 1);
-        for (let i = first; i <= end; i++) {
-            parts.push(this._rowHTML(i, d[0][i], d[1][i], d[2][i]));
-        }
-        this._rowsDiv.innerHTML = parts.join("");
-    }
-
-    _renderSession(first, last) {
-        const firstPage = Math.floor(first / PAGE_SIZE);
-        const lastPage = Math.floor(last / PAGE_SIZE);
-
-        // Request any missing pages (+ prefetch neighbours)
-        for (let p = Math.max(0, firstPage - 1); p <= lastPage + 1; p++) {
-            if (!this._pageCache.has(p) && !this._pendingPages.has(p)) {
-                this._loadPage(p);
-            }
-        }
-
-        const parts = [];
-        for (let i = first; i <= last && i < this._totalRows; i++) {
-            const pIdx = Math.floor(i / PAGE_SIZE);
-            const page = this._pageCache.get(pIdx);
-            if (page) {
-                const row = page[i - pIdx * PAGE_SIZE];
-                if (row) {
-                    parts.push(this._rowHTML(i, row.t, row.ch1, row.ch2));
-                    continue;
-                }
-            }
-            // Placeholder while loading
-            parts.push(this._placeholderHTML(i));
-        }
-        this._rowsDiv.innerHTML = parts.join("");
-    }
-
-    _rowHTML(i, t, ch1, ch2) {
-        const top = i * ROW_HEIGHT;
-        return `<div class="dt-row" style="top:${top}px">` +
-            `<div class="dt-cell dt-num">${i + 1}</div>` +
-            `<div class="dt-cell dt-time">${t.toFixed(4)}</div>` +
-            `<div class="dt-cell dt-ch1">${this._fmt(ch1)}</div>` +
-            `<div class="dt-cell dt-ch2">${this._fmt(ch2)}</div></div>`;
-    }
-
-    _placeholderHTML(i) {
-        const top = i * ROW_HEIGHT;
-        return `<div class="dt-row dt-loading" style="top:${top}px">` +
-            `<div class="dt-cell dt-num">${i + 1}</div>` +
-            `<div class="dt-cell dt-time">...</div>` +
-            `<div class="dt-cell dt-ch1">...</div>` +
-            `<div class="dt-cell dt-ch2">...</div></div>`;
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  IndexedDB page loading                                             */
-    /* ------------------------------------------------------------------ */
-
-    async _loadPage(pageIdx) {
-        if (this._pageCache.has(pageIdx) || this._pendingPages.has(pageIdx)) return;
-        this._pendingPages.add(pageIdx);
-
-        try {
-            const offset = pageIdx * PAGE_SIZE;
-            const rows = await this._store.getPage(this._sessionId, offset, PAGE_SIZE);
-            this._pageCache.set(pageIdx, rows);
-            this._evictCache(pageIdx);
-            this._render();
-        } catch (e) {
-            console.error("Page load error:", e);
-        } finally {
-            this._pendingPages.delete(pageIdx);
-        }
-    }
-
-    /** Keep cache bounded; evict pages farthest from current view. */
-    _evictCache(currentPage) {
-        if (this._pageCache.size <= MAX_CACHED_PAGES) return;
-
-        const keys = [...this._pageCache.keys()];
-        keys.sort((a, b) => Math.abs(b - currentPage) - Math.abs(a - currentPage));
-        while (this._pageCache.size > MAX_CACHED_PAGES - 10) {
-            this._pageCache.delete(keys.pop());
-        }
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Formatting                                                         */
-    /* ------------------------------------------------------------------ */
 
     _fmt(v) {
         if (v == null) return "---";
