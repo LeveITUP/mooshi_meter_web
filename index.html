@@ -169,53 +169,58 @@
     <!-- Resize handle -->
     <div class="panel-resize-handle" id="panel-resize-handle"></div>
 
-    <!-- RIGHT: Graph / Table panel -->
+    <!-- RIGHT: Graph + Table stacked panel -->
     <div class="panel-right">
-        <div class="card graph-card">
-            <div class="graph-toolbar">
-                <div class="view-toggle" title="Switch between real-time graph and spreadsheet table view">
-                    <button id="btn-view-graph" class="vt-btn active"><i class="fa-solid fa-chart-line"></i> Graph</button>
-                    <button id="btn-view-table" class="vt-btn"><i class="fa-solid fa-table"></i> Table</button>
-                </div>
 
-                <div id="graph-controls" class="toolbar-group">
-                    <div class="control-group">
-                        <label>Mode</label>
-                        <select id="graph-mode" title="Combined: both channels overlaid with dual Y-axes. Split: side-by-side graphs. CH1/CH2 Only: single channel view">
-                            <option value="combined" selected>Combined</option>
-                            <option value="split">Split</option>
-                            <option value="ch1">CH1 Only</option>
-                            <option value="ch2">CH2 Only</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Points</label>
-                        <select id="graph-points" title="Maximum number of data points displayed. More points show longer history but may reduce performance">
-                            <option>100</option><option>200</option>
-                            <option selected>500</option><option>1000</option><option>2000</option>
-                        </select>
-                    </div>
-                    <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis"><i class="fa-solid fa-eraser"></i> Clear</button>
+        <!-- Graph pane -->
+        <div class="pane pane-graph" id="pane-graph">
+            <div class="pane-toolbar">
+                <span class="pane-title"><i class="fa-solid fa-chart-line"></i> Graph</span>
+                <div class="control-group">
+                    <label>Mode</label>
+                    <select id="graph-mode" title="Combined: both channels overlaid with dual Y-axes. Split: side-by-side graphs. CH1/CH2 Only: single channel view">
+                        <option value="combined" selected>Combined</option>
+                        <option value="split">Split</option>
+                        <option value="ch1">CH1 Only</option>
+                        <option value="ch2">CH2 Only</option>
+                    </select>
                 </div>
-
-                <div id="table-controls" class="toolbar-group" style="display:none;">
-                    <div class="control-group">
-                        <label>Source</label>
-                        <select id="table-source" title="Live: streaming data in memory. Or select a saved session to browse its full IndexedDB history">
-                            <option value="live">Live</option>
-                        </select>
-                    </div>
-                    <span id="table-row-count" style="font-size:11px; color:var(--text-dim);" title="Total rows in the current data source"></span>
+                <div class="control-group">
+                    <label>Points</label>
+                    <select id="graph-points" title="Maximum number of data points displayed. More points show longer history but may reduce performance">
+                        <option>100</option><option>200</option>
+                        <option selected>500</option><option>1000</option><option>2000</option>
+                    </select>
                 </div>
-
+                <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis"><i class="fa-solid fa-eraser"></i> Clear</button>
                 <button id="btn-graph-export" class="small" title="Download the visible data as a CSV file"><i class="fa-solid fa-file-csv"></i> Export</button>
                 <span style="flex:1;"></span>
                 <button id="btn-sync-time" class="small" disabled title="Sync the Mooshimeter's internal clock to your computer's current time (UTC)"><i class="fa-solid fa-clock"></i> Sync Time</button>
                 <button id="btn-reboot" class="small danger" disabled title="Reboot the Mooshimeter. The device will disconnect and must be re-paired"><i class="fa-solid fa-power-off"></i> Reboot</button>
             </div>
             <div id="graph-container"></div>
-            <div id="table-container" style="display:none; flex:1; min-height:200px;"></div>
         </div>
+
+        <!-- Vertical resize handle + swap button -->
+        <div class="pane-divider" id="pane-divider">
+            <button id="btn-swap-panes" class="pane-swap-btn" title="Swap graph and table positions"><i class="fa-solid fa-arrows-up-down"></i></button>
+        </div>
+
+        <!-- Table pane -->
+        <div class="pane pane-table" id="pane-table">
+            <div class="pane-toolbar">
+                <span class="pane-title"><i class="fa-solid fa-table"></i> Table</span>
+                <div class="control-group">
+                    <label>Source</label>
+                    <select id="table-source" title="Live: streaming data in memory. Or select a saved session to browse its full IndexedDB history">
+                        <option value="live">Live</option>
+                    </select>
+                </div>
+                <span id="table-row-count" style="font-size:11px; color:var(--text-dim);" title="Total rows in the current data source"></span>
+            </div>
+            <div id="table-container"></div>
+        </div>
+
     </div>
 
 </div>

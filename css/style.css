@@ -185,7 +185,7 @@ body.panel-resizing {
     user-select: none !important;
 }
 
-/* === Right graph panel === */
+/* === Right stacked panel (graph + table) === */
 
 .panel-right {
     flex: 1;
@@ -193,6 +193,88 @@ body.panel-resizing {
     display: flex;
     flex-direction: column;
     padding-left: 4px;
+    --pane-split: 55%;
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.pane-graph { height: var(--pane-split); flex-shrink: 0; }
+.pane-table { flex: 1; }
+
+/* When swapped, table gets the fixed height and graph gets flex */
+.panel-right.panes-swapped .pane-table { height: var(--pane-split); flex: none; flex-shrink: 0; }
+.panel-right.panes-swapped .pane-graph { height: auto; flex: 1; }
+
+.pane-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+.pane-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    font-weight: 600;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+.pane-title i { margin-right: 3px; }
+
+/* Pane vertical divider / resize handle */
+.pane-divider {
+    height: 7px;
+    cursor: row-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+    transition: background 0.15s;
+}
+.pane-divider:hover,
+.pane-divider.dragging {
+    background: rgba(61,106,255,0.1);
+}
+body.pane-resizing {
+    cursor: row-resize !important;
+    user-select: none !important;
+}
+
+.pane-swap-btn {
+    position: absolute;
+    right: 12px;
+    width: 22px;
+    height: 16px;
+    padding: 0;
+    font-size: 10px;
+    border-radius: 3px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+    z-index: 6;
+}
+.pane-swap-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-card);
 }
 
 /* === Cards === */
@@ -342,26 +424,16 @@ body.panel-resizing {
 
 /* === Graph card === */
 
-.graph-card {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.graph-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
-}
-
 #graph-container {
     flex: 1;
-    min-height: 200px;
+    min-height: 0;
     position: relative;
     overflow: hidden;
+}
+
+#table-container {
+    flex: 1;
+    min-height: 0;
 }
 
 /* uPlot overrides */
@@ -460,35 +532,14 @@ button.small {
     color: #000;
 }
 
-/* === View toggle === */
-
-.view-toggle {
-    display: flex;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.vt-btn {
-    border: none;
-    border-radius: 0;
-    padding: 3px 10px;
-    font-size: 11px;
-    background: var(--bg-input);
-    color: var(--text-dim);
-    cursor: pointer;
-    font-weight: 500;
-}
-.vt-btn + .vt-btn { border-left: 1px solid var(--border); }
-.vt-btn.active { background: var(--accent); color: #fff; }
-.vt-btn:hover:not(.active) { background: rgba(255,255,255,0.08); }
-
-.toolbar-group { display: contents; }
+/* (view toggle removed — graph and table are always visible) */
 
 /* === AG Grid data table === */
 
 #table-container {
     font-family: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;
     font-size: 12px;
+    overflow: hidden;
 }
 
 .ag-ch1-cell { color: var(--ch1-color) !important; }
@@ -911,17 +962,19 @@ body.theme-light button.danger:hover:not(:disabled) {
     color: #fff;
 }
 
-/* View toggle */
-body.theme-light .vt-btn {
-    background: #f0f0f0;
-    color: var(--text-dim);
+/* Pane divider */
+body.theme-light .pane-divider:hover,
+body.theme-light .pane-divider.dragging {
+    background: rgba(43,87,154,0.08);
 }
-body.theme-light .vt-btn.active {
-    background: #2b579a;
-    color: #fff;
+body.theme-light .pane-swap-btn {
+    background: #fff;
+    border-color: #c0c0c0;
 }
-body.theme-light .vt-btn:hover:not(.active) {
-    background: #e0e0e0;
+body.theme-light .pane-swap-btn:hover {
+    color: #2b579a;
+    border-color: #2b579a;
+    background: #fff;
 }
 
 /* Resize handle */
@@ -1006,7 +1059,8 @@ body.theme-light .u-legend td { color: var(--text) !important; }
         overflow-y: visible;
     }
     .panel-resize-handle { display: none; }
-    .panel-right { min-height: 350px; }
+    .panel-right { min-height: 500px; }
+    .pane-graph { height: 50% !important; }
     .channel-value { font-size: 24px; min-height: 36px; }
 }
 
@@ -1015,4 +1069,5 @@ body.theme-light .u-legend td { color: var(--text) !important; }
     .header-status { margin-left: 0; }
     .channel-value { font-size: 20px; }
     .modal-content { min-width: auto; margin: 16px; }
+    .pane-toolbar { font-size: 10px; }
 }

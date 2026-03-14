@@ -54,8 +54,7 @@ class App {
         this._beepActive = false;
         this.continuityEnabled = true;
 
-        // View mode (graph / table)
-        this._viewMode = "graph";
+        // Table
         this.dataTable = null;
         this._tableSource = "live";
 
@@ -70,6 +69,7 @@ class App {
         this._bindUI();
         this._initAccordion();
         this._initResizeHandle();
+        this._initPaneResize();
         this._initTheme();
         this._initGraph();
         this._initDataTable();
@@ -207,10 +207,11 @@ class App {
             this._sendCmd(`LOG:INTERVAL ${ms}`);
         });
 
-        // View toggle (Graph / Table)
-        document.getElementById("btn-view-graph").addEventListener("click", () => this._setViewMode("graph"));
-        document.getElementById("btn-view-table").addEventListener("click", () => this._setViewMode("table"));
+        // Table source
         document.getElementById("table-source").addEventListener("change", (e) => this._onTableSourceChanged(e.target.value));
+
+        // Swap panes
+        document.getElementById("btn-swap-panes").addEventListener("click", () => this._swapPanes());
 
         // Graph controls
         document.getElementById("graph-points").addEventListener("change", (e) => {
@@ -363,11 +364,8 @@ class App {
         const container = document.getElementById("graph-container");
         this.graph = new RealtimeGraph(container, 500);
         this.graphRefreshInterval = setInterval(() => {
-            if (this._viewMode === "graph") {
-                if (this.graph) this.graph.refresh();
-            } else if (this._viewMode === "table" && this._tableSource === "live") {
-                if (this.dataTable) this.dataTable.refresh();
-            }
+            if (this.graph) this.graph.refresh();
+            if (this.dataTable && this._tableSource === "live") this.dataTable.refresh();
         }, 200);
     }
 
@@ -375,32 +373,76 @@ class App {
         const container = document.getElementById("table-container");
         this.dataTable = new DataTable(container);
         this.dataTable.setLiveSource(this.graph.data);
+        this._populateTableSources();
+
+        // Restore saved pane swap
+        if (localStorage.getItem("mooshi:panes-swapped") === "1") {
+            this._swapPanes();
+        }
     }
 
-    // --- View toggle ---
+    // --- Pane vertical resize ---
 
-    _setViewMode(mode) {
-        this._viewMode = mode;
-        const graphEl = document.getElementById("graph-container");
-        const tableEl = document.getElementById("table-container");
-        const graphCtrl = document.getElementById("graph-controls");
-        const tableCtrl = document.getElementById("table-controls");
+    _initPaneResize() {
+        const divider = document.getElementById("pane-divider");
+        const panel = document.querySelector(".panel-right");
+        const graphPane = document.getElementById("pane-graph");
+        let startY, startH;
 
-        const isGraph = mode === "graph";
-        graphEl.style.display = isGraph ? "" : "none";
-        tableEl.style.display = isGraph ? "none" : "";
-        graphCtrl.style.display = isGraph ? "contents" : "none";
-        tableCtrl.style.display = isGraph ? "none" : "contents";
+        const onMove = (e) => {
+            const panelRect = panel.getBoundingClientRect();
+            const newH = Math.max(80, Math.min(panelRect.height - 120, startH + e.clientY - startY));
+            const pct = (newH / panelRect.height * 100).toFixed(1);
+            panel.style.setProperty("--pane-split", pct + "%");
+        };
 
-        document.getElementById("btn-view-graph").classList.toggle("active", isGraph);
-        document.getElementById("btn-view-table").classList.toggle("active", !isGraph);
+        const onUp = () => {
+            divider.classList.remove("dragging");
+            document.body.classList.remove("pane-resizing");
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+            localStorage.setItem("mooshi:pane-split", panel.style.getPropertyValue("--pane-split"));
+            // Trigger graph resize
+            if (this.graph) this.graph.refresh();
+        };
 
-        if (!isGraph) {
-            this._populateTableSources();
-            if (this._tableSource === "live") {
-                this.dataTable.setLiveSource(this.graph.data);
-            }
+        divider.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            startY = e.clientY;
+            startH = graphPane.offsetHeight;
+            divider.classList.add("dragging");
+            document.body.classList.add("pane-resizing");
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        });
+
+        // Restore saved split
+        const saved = localStorage.getItem("mooshi:pane-split");
+        if (saved) panel.style.setProperty("--pane-split", saved);
+    }
+
+    _swapPanes() {
+        const panel = document.querySelector(".panel-right");
+        const graphPane = document.getElementById("pane-graph");
+        const tablePane = document.getElementById("pane-table");
+        const divider = document.getElementById("pane-divider");
+
+        const isSwapped = panel.classList.toggle("panes-swapped");
+
+        if (isSwapped) {
+            panel.insertBefore(tablePane, graphPane);
+            panel.insertBefore(divider, graphPane);
+        } else {
+            panel.insertBefore(graphPane, tablePane);
+            panel.insertBefore(divider, tablePane);
         }
+
+        localStorage.setItem("mooshi:panes-swapped", isSwapped ? "1" : "0");
+
+        // Refresh graph dimensions after DOM reflow
+        requestAnimationFrame(() => {
+            if (this.graph) this.graph.refresh();
+        });
     }
 
     async _populateTableSources() {
@@ -856,7 +898,7 @@ class App {
             const dur = session ? formatDuration(session.endTime - session.startTime) : "";
             status.textContent = `Saved ${count.toLocaleString()} samples (${dur})`;
             showToast(`Logged ${count.toLocaleString()} samples (${dur})`, { type: "success" });
-            if (this._viewMode === "table") this._populateTableSources();
+            this._populateTableSources();
         } else {
             const ch1Label = this.ch1Input?.label || "CH1";
             const ch2Label = this.ch2Input?.label || "CH2";
@@ -985,7 +1027,7 @@ class App {
     // --- CSV Export ---
 
     async _exportGraphCSV() {
-        if (this._viewMode === "table" && this._tableSource.startsWith("session:")) {
+        if (this._tableSource.startsWith("session:")) {
             const sessionId = parseInt(this._tableSource.split(":")[1]);
             showToast("Exporting session...", { duration: 2000 });
             try {
