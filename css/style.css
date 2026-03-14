@@ -1046,6 +1046,47 @@ body.theme-light .shortcut-hint kbd {
 body.theme-light .u-legend th { color: var(--text-dim) !important; }
 body.theme-light .u-legend td { color: var(--text) !important; }
 
+/* === Serial DMM === */
+
+.badge-experimental {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--warning);
+    color: #000;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.dmm-reading {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 4px 2px;
+    font-family: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;
+}
+
+.dmm-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.dmm-unit {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.dmm-mode {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+    text-transform: uppercase;
+}
+
 /* === Responsive === */
 
 @media (max-width: 900px) {

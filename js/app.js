@@ -15,6 +15,8 @@ import { DataTable } from "./data-table.js";
 import { showToast } from "./toast.js";
 import "./tooltip.js";
 import { initShortcuts } from "./shortcuts.js";
+import { DmmManager } from "./dmm/dmm-manager.js";
+import { METERS, meterName, metersByProtocol } from "./dmm/meter-db.js";
 
 class App {
     constructor() {
@@ -58,6 +60,10 @@ class App {
         this.dataTable = null;
         this._tableSource = "live";
 
+        // Serial DMM
+        this.dmm = null;
+        this._dmmMeterList = [];
+
         // Hold/freeze display
         this.displayHeld = false;
 
@@ -75,6 +81,7 @@ class App {
         this._initDataTable();
         this._initSampleStore();
         this._checkBluetooth();
+        this._initDmm();
         this._showWelcomeIfFirstRun();
         initShortcuts(this);
     }
@@ -1128,6 +1135,138 @@ class App {
             this.displayHeld = false;
             const holdBtn = document.getElementById("btn-hold");
             if (holdBtn) { holdBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Hold'; holdBtn.classList.remove("active"); }
+        }
+    }
+    // --- Serial DMM (Experimental) ---
+
+    _initDmm() {
+        const sel = document.getElementById("dmm-meter");
+        const connectBtn = document.getElementById("btn-dmm-connect");
+        const disconnectBtn = document.getElementById("btn-dmm-disconnect");
+
+        if (!sel || !connectBtn) return;
+
+        // Populate meter selector grouped by protocol
+        const groups = metersByProtocol();
+        const protocolLabels = {
+            metex14: "Metex14 (polled)",
+            peaktech10: "PeakTech10 (polled)",
+            voltcraft14: "Voltcraft14 (streaming)",
+            voltcraft15: "Voltcraft15 (streaming)",
+            vc820: "VC820 / FS9721 (streaming)",
+        };
+
+        this._dmmMeterList = [];
+        for (const [proto, meters] of Object.entries(groups)) {
+            const optgroup = document.createElement("optgroup");
+            optgroup.label = protocolLabels[proto] || proto;
+            for (const m of meters) {
+                const opt = document.createElement("option");
+                opt.textContent = meterName(m);
+                opt.value = this._dmmMeterList.length;
+                this._dmmMeterList.push(m);
+                optgroup.appendChild(opt);
+            }
+            sel.appendChild(optgroup);
+        }
+
+        // Check WebSerial support
+        if (!DmmManager.isSupported()) {
+            connectBtn.disabled = true;
+            connectBtn.title = "WebSerial API not available. Use Chrome or Edge 89+";
+            document.getElementById("dmm-status").textContent = "WebSerial not available";
+            return;
+        }
+
+        connectBtn.addEventListener("click", () => this._dmmConnect());
+        disconnectBtn.addEventListener("click", () => this._dmmDisconnect());
+    }
+
+    async _dmmConnect() {
+        const sel = document.getElementById("dmm-meter");
+        const meter = this._dmmMeterList[parseInt(sel.value)];
+        if (!meter) return;
+
+        if (this.dmm) await this._dmmDisconnect();
+
+        this.dmm = new DmmManager();
+
+        this.dmm.addEventListener("connected", (e) => {
+            document.getElementById("btn-dmm-connect").disabled = true;
+            document.getElementById("btn-dmm-disconnect").disabled = false;
+            document.getElementById("dmm-status").textContent = `Connected: ${e.detail.name}`;
+            document.getElementById("dmm-reading").style.display = "";
+            showToast(`DMM connected: ${e.detail.name}`, { type: "success", duration: 2000 });
+        });
+
+        this.dmm.addEventListener("disconnected", () => {
+            document.getElementById("btn-dmm-connect").disabled = false;
+            document.getElementById("btn-dmm-disconnect").disabled = true;
+            document.getElementById("dmm-status").textContent = "Disconnected";
+            document.getElementById("dmm-reading").style.display = "none";
+            this.dmm = null;
+        });
+
+        this.dmm.addEventListener("error", (e) => {
+            document.getElementById("dmm-status").textContent = `Error: ${e.detail.message}`;
+            showToast(`DMM error: ${e.detail.message}`, { type: "error" });
+        });
+
+        this.dmm.addEventListener("reading", (e) => {
+            const r = e.detail;
+            // Update DMM display
+            const valEl = document.getElementById("dmm-value");
+            const unitEl = document.getElementById("dmm-unit");
+            const modeEl = document.getElementById("dmm-mode");
+
+            valEl.textContent = r.overload ? "OL" : r.display;
+            unitEl.textContent = (r.prefix || "") + (r.unit || "");
+            modeEl.textContent = r.mode || "";
+
+            // Feed to graph as CH1 (CH2 = null)
+            if (this.graph && r.value !== null) {
+                this.graph.addSample(r.value, null);
+            }
+
+            // Update CH1 value display
+            if (!this.displayHeld && r.value !== null) {
+                const el = document.getElementById("ch1-value");
+                el.textContent = r.overload ? "OL" : `${r.display} ${(r.prefix || "") + (r.unit || "")}`;
+                el.classList.remove("flash");
+                void el.offsetWidth;
+                el.classList.add("flash");
+            }
+
+            this.sampleCount++;
+            if (this.sampleCount % 5 === 0) {
+                const el = document.getElementById("sample-count");
+                el.textContent = `${this.sampleCount} samples`;
+                el.style.display = "";
+            }
+
+            // Log if active
+            if (this.logging && r.value !== null) {
+                this.sampleStore.addSample(r.value, null);
+            }
+        });
+
+        try {
+            document.getElementById("dmm-status").textContent = "Connecting...";
+            await this.dmm.connect(meter);
+        } catch (e) {
+            if (e.name !== "NotFoundError") {
+                document.getElementById("dmm-status").textContent = `Error: ${e.message}`;
+            } else {
+                document.getElementById("dmm-status").textContent = "No port selected";
+            }
+            this.dmm = null;
+        }
+    }
+
+    async _dmmDisconnect() {
+        if (this.dmm) {
+            await this.dmm.disconnect();
+            this.dmm = null;
         }
     }
 }

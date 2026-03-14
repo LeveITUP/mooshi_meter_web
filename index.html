@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.5.2/dist/ag-grid-community.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.3/dist/ag-grid-community.min.js"></script>
 </head>
 <body class="theme-light">
 
@@ -164,6 +164,29 @@
             </div>
         </div>
 
+        <!-- Serial DMM (Experimental, collapsible) -->
+        <div class="card" data-collapsible>
+            <div class="card-title">Serial DMM <span class="badge-experimental">Experimental</span> <span class="collapse-icon"></span></div>
+            <div class="card-body">
+                <div class="control-section">
+                    <div class="control-group" style="flex:1;">
+                        <label>Meter</label>
+                        <select id="dmm-meter" title="Select your serial multimeter model. Requires a USB-serial adapter and WebSerial API (Chrome/Edge)"></select>
+                    </div>
+                </div>
+                <div class="control-section" style="margin-top:4px;">
+                    <button id="btn-dmm-connect" class="small" title="Open the serial port picker and connect to the selected meter"><i class="fa-solid fa-plug"></i> Connect</button>
+                    <button id="btn-dmm-disconnect" class="small" disabled title="Disconnect from the serial meter"><i class="fa-solid fa-plug-circle-xmark"></i> Disconnect</button>
+                    <span id="dmm-status" style="font-size:11px; color:var(--text-dim);">Not connected</span>
+                </div>
+                <div class="dmm-reading" id="dmm-reading" style="display:none;">
+                    <span class="dmm-value" id="dmm-value">---</span>
+                    <span class="dmm-unit" id="dmm-unit"></span>
+                    <span class="dmm-mode" id="dmm-mode"></span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Resize handle -->
@@ -227,7 +250,7 @@
 
 <!-- Status bar -->
 <div class="status-bar">
-    <span>Web Bluetooth &middot; Chrome / Edge required</span>
+    <span>Web Bluetooth &middot; WebSerial &middot; Chrome / Edge required</span>
     <span class="shortcut-hint">Press <kbd>?</kbd> for keyboard shortcuts</span>
     <span>Mooshimeter Desktop</span>
 </div>
