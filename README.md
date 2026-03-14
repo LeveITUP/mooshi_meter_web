@@ -4,6 +4,8 @@ A browser-based companion app for the [Mooshimeter](https://moosh.im/) wireless 
 
 Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.levelitup.tech)
 
+<a href="https://buymeacoffee.com/marcus.levelitup" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="40"></a>
+
 ## Features
 
 - **Dual-channel measurements** — voltage, current, resistance, temperature, and diode testing on two independent channels simultaneously
