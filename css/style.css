@@ -1,20 +1,20 @@
-/* Mooshimeter Desktop */
+/* MooshiMeter Web — Dark theme (VS Code inspired) */
 
 :root {
-    --bg-primary: #1a1a2e;
-    --bg-secondary: #16213e;
-    --bg-card: #1e2a47;
-    --bg-input: #0f1729;
-    --border: #2a3a5c;
-    --text: #e0e0e0;
-    --text-dim: #8899aa;
-    --accent: #3d6aff;
-    --accent-hover: #5580ff;
-    --ch1-color: #ff4444;
-    --ch2-color: #44cc44;
-    --success: #44cc44;
-    --warning: #ffaa00;
-    --error: #ff4444;
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-card: #2d2d2d;
+    --bg-input: #3c3c3c;
+    --border: #404040;
+    --text: #d4d4d4;
+    --text-dim: #808080;
+    --accent: #007acc;
+    --accent-hover: #1a8ad4;
+    --ch1-color: #f44747;
+    --ch2-color: #6a9955;
+    --success: #6a9955;
+    --warning: #cca700;
+    --error: #f44747;
     --radius: 6px;
 }
 
@@ -643,7 +643,7 @@ button.small {
 .custom-tooltip {
     position: fixed;
     z-index: 300;
-    background: #151a30;
+    background: #1e1e1e;
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -928,12 +928,16 @@ body.theme-light .header {
 body.theme-light .header h1 { color: #fff; }
 body.theme-light .header h1 span { color: #fff; }
 
-/* Menu buttons in header */
+/* Menu buttons in header — prominent on blue ribbon */
 body.theme-light .menu-btn {
-    color: rgba(255,255,255,0.9);
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.25);
+    font-weight: 600;
 }
 body.theme-light .menu-btn:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.4);
     color: #fff;
 }
 body.theme-light .menu-btn.active {
@@ -941,6 +945,7 @@ body.theme-light .menu-btn.active {
     color: #2b579a;
     border-color: #d1d1d1;
     border-bottom-color: #fff;
+    font-weight: 600;
 }
 
 /* Menu panels */

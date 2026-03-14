@@ -1,4 +1,4 @@
-# Mooshimeter Desktop
+# MooshiMeter Web
 
 A browser-based companion app for the [Mooshimeter](https://moosh.im/) wireless dual-channel multimeter, built with the Web Bluetooth API. This app replaces the original mobile app, letting you control and monitor your meter from any desktop running Chrome or Edge.
 
