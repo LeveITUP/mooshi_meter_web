@@ -70,6 +70,7 @@ class App {
         this._bindUI();
         this._initAccordion();
         this._initResizeHandle();
+        this._initTheme();
         this._initGraph();
         this._initDataTable();
         this._initSampleStore();
@@ -78,12 +79,36 @@ class App {
         initShortcuts(this);
     }
 
+    // --- Theme toggle ---
+
+    _initTheme() {
+        const saved = localStorage.getItem("mooshi:theme");
+        if (saved === "light") this._applyTheme("light");
+
+        document.getElementById("btn-theme").addEventListener("click", () => {
+            const next = document.body.classList.contains("theme-light") ? "dark" : "light";
+            this._applyTheme(next);
+            localStorage.setItem("mooshi:theme", next);
+        });
+    }
+
+    _applyTheme(theme) {
+        const btn = document.getElementById("btn-theme");
+        if (theme === "light") {
+            document.body.classList.add("theme-light");
+            btn.textContent = "Dark";
+        } else {
+            document.body.classList.remove("theme-light");
+            btn.textContent = "Light";
+        }
+    }
+
     // --- First-run welcome dialog ---
 
     _showWelcomeIfFirstRun() {
         this._initWelcomeDialog();
 
-        if (localStorage.getItem("mooshi:welcomed") !== "1") {
+        if (sessionStorage.getItem("mooshi:welcomed") !== "1") {
             this._showWelcome();
         }
     }
@@ -93,12 +118,9 @@ class App {
         if (!overlay) return;
 
         const closeBtn = document.getElementById("btn-welcome-close");
-        const dontShow = document.getElementById("welcome-dont-show");
 
         const close = () => {
-            if (dontShow.checked) {
-                localStorage.setItem("mooshi:welcomed", "1");
-            }
+            sessionStorage.setItem("mooshi:welcomed", "1");
             overlay.style.display = "none";
         };
 

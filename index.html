@@ -219,7 +219,11 @@
 <div class="status-bar">
     <span>Web Bluetooth &middot; Chrome / Edge required</span>
     <span class="shortcut-hint">Press <kbd>?</kbd> for keyboard shortcuts</span>
-    <span>Mooshimeter Desktop <button id="btn-about" class="about-btn" title="About this app">About</button></span>
+    <span>
+        <button id="btn-theme" class="about-btn" title="Toggle between dark and light theme">Light</button>
+        Mooshimeter Desktop
+        <button id="btn-about" class="about-btn" title="About this app">About</button>
+    </span>
 </div>
 
 <!-- First-run welcome dialog -->
@@ -265,10 +269,7 @@
         </div>
 
         <div class="welcome-footer">
-            <label class="welcome-checkbox">
-                <input type="checkbox" id="welcome-dont-show" checked>
-                Don't show this again
-            </label>
+            <span class="welcome-session-note">Shown once per session</span>
             <button id="btn-welcome-close" class="primary">Get Started</button>
         </div>
     </div>
