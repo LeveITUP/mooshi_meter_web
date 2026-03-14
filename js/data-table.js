@@ -95,13 +95,13 @@ export class DataTable {
             rowModelType: "clientSide",
             getRowId: (params) => String(params.data.rowNum),
             theme: agGrid.themeQuartz.withParams(isDark ? {
-                backgroundColor: "#1e2a47",
-                foregroundColor: "#e0e0e0",
-                headerBackgroundColor: "#16213e",
-                headerForegroundColor: "#8899aa",
-                borderColor: "#2a3a5c",
+                backgroundColor: "#2d2d2d",
+                foregroundColor: "#d4d4d4",
+                headerBackgroundColor: "#252526",
+                headerForegroundColor: "#808080",
+                borderColor: "#404040",
                 rowHoverColor: "rgba(255,255,255,0.04)",
-                selectedRowBackgroundColor: "rgba(61,106,255,0.15)",
+                selectedRowBackgroundColor: "rgba(0,122,204,0.15)",
                 oddRowBackgroundColor: "rgba(255,255,255,0.02)",
                 columnBorder: true,
                 wrapperBorderRadius: "0px",
@@ -223,13 +223,13 @@ export class DataTable {
             infiniteInitialRowCount: this._totalRows,
             datasource: this._createSessionDatasource(store, sessionId),
             theme: agGrid.themeQuartz.withParams(isDark ? {
-                backgroundColor: "#1e2a47",
-                foregroundColor: "#e0e0e0",
-                headerBackgroundColor: "#16213e",
-                headerForegroundColor: "#8899aa",
-                borderColor: "#2a3a5c",
+                backgroundColor: "#2d2d2d",
+                foregroundColor: "#d4d4d4",
+                headerBackgroundColor: "#252526",
+                headerForegroundColor: "#808080",
+                borderColor: "#404040",
                 rowHoverColor: "rgba(255,255,255,0.04)",
-                selectedRowBackgroundColor: "rgba(61,106,255,0.15)",
+                selectedRowBackgroundColor: "rgba(0,122,204,0.15)",
                 oddRowBackgroundColor: "rgba(255,255,255,0.02)",
                 columnBorder: true,
                 wrapperBorderRadius: "0px",
@@ -314,6 +314,15 @@ export class DataTable {
 
         // Auto-scroll to bottom
         this._gridApi.ensureIndexVisible(this._liveRowData.length - 1, "bottom");
+    }
+
+    /** Export visible grid data as CSV using AG Grid's native export. */
+    exportCsv(fileName) {
+        if (!this._gridApi) return;
+        this._gridApi.exportDataAsCsv({
+            fileName: fileName || `mooshimeter_${new Date().toISOString().replace(/[:.]/g, "-")}.csv`,
+            columnKeys: ["time", "ch1", "ch2"],
+        });
     }
 
     clear() {

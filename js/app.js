@@ -296,6 +296,14 @@ class App {
         });
         document.getElementById("btn-graph-export").addEventListener("click", () => this._exportGraphCSV());
 
+        // Table export
+        document.getElementById("btn-table-export").addEventListener("click", () => {
+            if (this.dataTable) {
+                this.dataTable.exportCsv();
+                showToast("Table exported as CSV", { type: "success", duration: 2000 });
+            }
+        });
+
         // Utilities
         document.getElementById("btn-sync-time").addEventListener("click", () => {
             this._sendCmd(`TIME_UTC ${Math.floor(Date.now() / 1000)}`);
