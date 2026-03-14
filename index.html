@@ -8,16 +8,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.min.css">
     <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
 </head>
-<body>
+<body class="theme-light">
 
 <!-- Combined header -->
 <div class="header">
     <h1><span>&#9889;</span> Mooshimeter</h1>
 
     <div class="header-actions">
-        <button id="btn-scan" class="primary" title="Open the Bluetooth device picker and connect to a Mooshimeter">Scan &amp; Connect</button>
-        <button id="btn-disconnect" disabled title="Disconnect from the current Mooshimeter">Disconnect</button>
+        <button id="btn-scan" class="primary" title="Open the Bluetooth device picker and connect to a Mooshimeter"><i class="fa-brands fa-bluetooth-b"></i> Scan &amp; Connect</button>
+        <button id="btn-disconnect" disabled title="Disconnect from the current Mooshimeter"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
+        <span class="header-divider"></span>
+        <button id="btn-theme" class="header-icon-btn" title="Toggle between dark and light theme"><i class="fa-solid fa-sun"></i></button>
+        <button id="btn-about" class="header-icon-btn" title="About this app"><i class="fa-solid fa-circle-info"></i></button>
     </div>
 
     <div class="header-status">
@@ -58,7 +62,7 @@
                     <label>Range</label>
                     <select id="ch1-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
                 </div>
-                <button id="ch1-zero" class="small" disabled title="Set current reading as zero offset (relative mode)">Zero</button>
+                <button id="ch1-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
             </div>
         </div>
 
@@ -85,7 +89,7 @@
                     <label>Range</label>
                     <select id="ch2-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
                 </div>
-                <button id="ch2-zero" class="small" disabled title="Set current reading as zero offset (relative mode)">Zero</button>
+                <button id="ch2-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
             </div>
         </div>
 
@@ -109,7 +113,7 @@
                             <option>Thermocouple T</option>
                         </select>
                     </div>
-                    <button id="btn-continuity" class="small active" disabled title="Audible beep when Resistance is below 40 ohms or Diode forward voltage is detected">Beep: ON</button>
+                    <button id="btn-continuity" class="small active" disabled title="Audible beep when Resistance is below 40 ohms or Diode forward voltage is detected"><i class="fa-solid fa-volume-high"></i> Beep: ON</button>
                 </div>
             </div>
         </div>
@@ -127,9 +131,9 @@
                         <label>Depth</label>
                         <select id="samp-depth" disabled title="Number of ADC samples averaged per reading. Higher depth reduces noise but slows update rate"></select>
                     </div>
-                    <button id="btn-stream" disabled title="Start or stop continuous measurement streaming (Space)">Start</button>
-                    <button id="btn-single" class="small" disabled title="Take a single measurement snapshot">Single</button>
-                    <button id="btn-hold" class="small" disabled title="Freeze the display. Streaming continues in background for graph/logging (H)">Hold</button>
+                    <button id="btn-stream" disabled title="Start or stop continuous measurement streaming (Space)"><i class="fa-solid fa-play"></i> Start</button>
+                    <button id="btn-single" class="small" disabled title="Take a single measurement snapshot"><i class="fa-solid fa-camera"></i> Single</button>
+                    <button id="btn-hold" class="small" disabled title="Freeze the display. Streaming continues in background for graph/logging (H)"><i class="fa-solid fa-pause"></i> Hold</button>
                 </div>
             </div>
         </div>
@@ -139,14 +143,14 @@
             <div class="card-title">Logging <span class="collapse-icon"></span></div>
             <div class="card-body">
                 <div class="control-section">
-                    <button id="btn-log" disabled title="Record all incoming samples to IndexedDB. Supports 24hr+ sessions. Click again to stop">Start Log</button>
-                    <button id="btn-sessions" class="small" title="View, export, and manage saved logging sessions stored in your browser">Sessions</button>
+                    <button id="btn-log" disabled title="Record all incoming samples to IndexedDB. Supports 24hr+ sessions. Click again to stop"><i class="fa-solid fa-circle-dot"></i> Start Log</button>
+                    <button id="btn-sessions" class="small" title="View, export, and manage saved logging sessions stored in your browser"><i class="fa-solid fa-folder-open"></i> Sessions</button>
                     <span id="log-status" style="font-size:11px; color:var(--text-dim);">Not logging</span>
                 </div>
                 <div class="control-section" style="margin-top:4px;">
                     <div class="control-group">
                         <label>SD</label>
-                        <button id="btn-sd-log" class="small" disabled title="Enable or disable logging to the Mooshimeter's on-board SD card">Enable</button>
+                        <button id="btn-sd-log" class="small" disabled title="Enable or disable logging to the Mooshimeter's on-board SD card"><i class="fa-solid fa-sd-card"></i> Enable</button>
                     </div>
                     <div class="control-group">
                         <label>Interval</label>
@@ -169,8 +173,8 @@
         <div class="card graph-card">
             <div class="graph-toolbar">
                 <div class="view-toggle" title="Switch between real-time graph and spreadsheet table view">
-                    <button id="btn-view-graph" class="vt-btn active">Graph</button>
-                    <button id="btn-view-table" class="vt-btn">Table</button>
+                    <button id="btn-view-graph" class="vt-btn active"><i class="fa-solid fa-chart-line"></i> Graph</button>
+                    <button id="btn-view-table" class="vt-btn"><i class="fa-solid fa-table"></i> Table</button>
                 </div>
 
                 <div id="graph-controls" class="toolbar-group">
@@ -190,7 +194,7 @@
                             <option selected>500</option><option>1000</option><option>2000</option>
                         </select>
                     </div>
-                    <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis">Clear</button>
+                    <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis"><i class="fa-solid fa-eraser"></i> Clear</button>
                 </div>
 
                 <div id="table-controls" class="toolbar-group" style="display:none;">
@@ -203,10 +207,10 @@
                     <span id="table-row-count" style="font-size:11px; color:var(--text-dim);" title="Total rows in the current data source"></span>
                 </div>
 
-                <button id="btn-graph-export" class="small" title="Download the visible data as a CSV file">Export CSV</button>
+                <button id="btn-graph-export" class="small" title="Download the visible data as a CSV file"><i class="fa-solid fa-file-csv"></i> Export</button>
                 <span style="flex:1;"></span>
-                <button id="btn-sync-time" class="small" disabled title="Sync the Mooshimeter's internal clock to your computer's current time (UTC)">Sync Time</button>
-                <button id="btn-reboot" class="small danger" disabled title="Reboot the Mooshimeter. The device will disconnect and must be re-paired">Reboot</button>
+                <button id="btn-sync-time" class="small" disabled title="Sync the Mooshimeter's internal clock to your computer's current time (UTC)"><i class="fa-solid fa-clock"></i> Sync Time</button>
+                <button id="btn-reboot" class="small danger" disabled title="Reboot the Mooshimeter. The device will disconnect and must be re-paired"><i class="fa-solid fa-power-off"></i> Reboot</button>
             </div>
             <div id="graph-container"></div>
             <div id="table-container" style="display:none;"></div>
@@ -219,11 +223,7 @@
 <div class="status-bar">
     <span>Web Bluetooth &middot; Chrome / Edge required</span>
     <span class="shortcut-hint">Press <kbd>?</kbd> for keyboard shortcuts</span>
-    <span>
-        <button id="btn-theme" class="about-btn" title="Toggle between dark and light theme">Light</button>
-        Mooshimeter Desktop
-        <button id="btn-about" class="about-btn" title="About this app">About</button>
-    </span>
+    <span>Mooshimeter Desktop</span>
 </div>
 
 <!-- First-run welcome dialog -->

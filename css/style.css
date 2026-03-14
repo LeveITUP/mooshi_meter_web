@@ -55,6 +55,33 @@ body {
     align-items: center;
 }
 
+.header-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.15);
+    margin: 0 2px;
+}
+
+.header-icon-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.8);
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.header-icon-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
 .header-status {
     display: flex;
     align-items: center;
@@ -783,22 +810,6 @@ button.small {
     z-index: 10;
 }
 
-.about-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: 10px;
-    padding: 1px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    margin-left: 6px;
-    transition: color 0.15s, border-color 0.15s;
-}
-.about-btn:hover {
-    color: var(--text);
-    border-color: var(--accent);
-}
-
 .shortcut-hint kbd {
     background: rgba(255,255,255,0.08);
     border: 1px solid var(--border);
@@ -852,6 +863,17 @@ body.theme-light .header-actions button.primary {
 body.theme-light .header-actions button.primary:hover:not(:disabled) {
     background: #e6ecf5;
 }
+body.theme-light .header-divider { background: rgba(255,255,255,0.25); }
+body.theme-light .header-icon-btn {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.85);
+}
+body.theme-light .header-icon-btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: #fff;
+}
+
 body.theme-light .status-badge {
     background: rgba(255,255,255,0.15);
     color: rgba(255,255,255,0.8);
@@ -1012,14 +1034,6 @@ body.theme-light .bmc-link {
 body.theme-light .status-bar {
     background: #f0f0f0;
     border-top-color: #d0d0d0;
-}
-body.theme-light .about-btn {
-    border-color: #c0c0c0;
-    color: var(--text-dim);
-}
-body.theme-light .about-btn:hover {
-    color: var(--text);
-    border-color: #2b579a;
 }
 body.theme-light .shortcut-hint kbd {
     background: rgba(0,0,0,0.05);

@@ -83,7 +83,8 @@ class App {
 
     _initTheme() {
         const saved = localStorage.getItem("mooshi:theme");
-        if (saved === "light") this._applyTheme("light");
+        // Default is light (set in HTML), only switch if explicitly saved as dark
+        if (saved === "dark") this._applyTheme("dark");
 
         document.getElementById("btn-theme").addEventListener("click", () => {
             const next = document.body.classList.contains("theme-light") ? "dark" : "light";
@@ -94,12 +95,13 @@ class App {
 
     _applyTheme(theme) {
         const btn = document.getElementById("btn-theme");
+        const icon = btn.querySelector("i");
         if (theme === "light") {
             document.body.classList.add("theme-light");
-            btn.textContent = "Dark";
+            if (icon) icon.className = "fa-solid fa-sun";
         } else {
             document.body.classList.remove("theme-light");
-            btn.textContent = "Light";
+            if (icon) icon.className = "fa-solid fa-moon";
         }
     }
 
@@ -176,7 +178,9 @@ class App {
         document.getElementById("btn-continuity").addEventListener("click", () => {
             this.continuityEnabled = !this.continuityEnabled;
             const btn = document.getElementById("btn-continuity");
-            btn.textContent = this.continuityEnabled ? "Beep: ON" : "Beep: OFF";
+            btn.innerHTML = this.continuityEnabled
+                ? '<i class="fa-solid fa-volume-high"></i> Beep: ON'
+                : '<i class="fa-solid fa-volume-xmark"></i> Beep: OFF';
             btn.classList.toggle("active", this.continuityEnabled);
         });
 
@@ -296,7 +300,9 @@ class App {
     _toggleHold() {
         this.displayHeld = !this.displayHeld;
         const btn = document.getElementById("btn-hold");
-        btn.textContent = this.displayHeld ? "Resume" : "Hold";
+        btn.innerHTML = this.displayHeld
+            ? '<i class="fa-solid fa-play"></i> Resume'
+            : '<i class="fa-solid fa-pause"></i> Hold';
         btn.classList.toggle("active", this.displayHeld);
         showToast(this.displayHeld ? "Display held" : "Display resumed", { duration: 1500 });
     }
@@ -591,7 +597,7 @@ class App {
             this._enableControls(false);
             this._stopHeartbeat();
             this.streaming = false;
-            document.getElementById("btn-stream").textContent = "Start";
+            document.getElementById("btn-stream").innerHTML = '<i class="fa-solid fa-play"></i> Start';
             document.getElementById("btn-stream").classList.remove("active");
             showToast("Disconnected", { type: "warning" });
         });
@@ -821,12 +827,12 @@ class App {
         const btn = document.getElementById("btn-stream");
         if (this.streaming) {
             this._sendCmd("SAMPLING:TRIGGER 0");
-            btn.textContent = "Start";
+            btn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
             btn.classList.remove("active");
             this.streaming = false;
         } else {
             this._sendCmd("SAMPLING:TRIGGER 2");
-            btn.textContent = "Stop";
+            btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
             btn.classList.add("active");
             this.streaming = true;
             this._resetAllStats();
@@ -843,7 +849,7 @@ class App {
             const session = await this.sampleStore.stopSession();
             this.logging = false;
             this._stopLogUpdateTimer();
-            btn.textContent = "Start Log";
+            btn.innerHTML = '<i class="fa-solid fa-circle-dot"></i> Start Log';
             btn.classList.remove("active");
             const count = session?.sampleCount || 0;
             const dur = session ? formatDuration(session.endTime - session.startTime) : "";
@@ -855,7 +861,7 @@ class App {
             const ch2Label = this.ch2Input?.label || "CH2";
             await this.sampleStore.startSession(ch1Label, ch2Label);
             this.logging = true;
-            btn.textContent = "Stop Log";
+            btn.innerHTML = '<i class="fa-solid fa-circle-stop"></i> Stop Log';
             btn.classList.add("active");
             status.textContent = "Recording...";
             showToast("Logging started", { type: "info", duration: 1500 });
@@ -1013,12 +1019,12 @@ class App {
         const btn = document.getElementById("btn-sd-log");
         if (this._sdLogging) {
             this._sendCmd("LOG:ON 0");
-            btn.textContent = "Enable";
+            btn.innerHTML = '<i class="fa-solid fa-sd-card"></i> Enable';
             btn.classList.remove("active");
             this._sdLogging = false;
         } else {
             this._sendCmd("LOG:ON 1");
-            btn.textContent = "Disable";
+            btn.innerHTML = '<i class="fa-solid fa-sd-card"></i> Disable';
             btn.classList.add("active");
             this._sdLogging = true;
         }
@@ -1078,7 +1084,7 @@ class App {
             this._resetAllStats();
             this.displayHeld = false;
             const holdBtn = document.getElementById("btn-hold");
-            if (holdBtn) { holdBtn.textContent = "Hold"; holdBtn.classList.remove("active"); }
+            if (holdBtn) { holdBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Hold'; holdBtn.classList.remove("active"); }
         }
     }
 }
