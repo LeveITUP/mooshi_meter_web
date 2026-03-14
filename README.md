@@ -23,6 +23,7 @@ Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.l
 - **Toast notifications** — non-intrusive status messages
 - **Collapsible sections** — accordion UI with persistent state
 - **CSV export** — export live graph data or full IndexedDB sessions
+- **Serial DMM support** *(experimental)* — connect 55+ serial multimeters via WebSerial API (USB-serial adapter required). Supported protocols: Metex14, PeakTech10, Voltcraft14/15, VC820/FS9721
 
 ## Requirements
 
@@ -112,7 +113,13 @@ Web Bluetooth is supported on Linux via Chrome/Chromium but requires a few extra
     ├── sample-store.js     IndexedDB session storage and export
     ├── toast.js            Toast notification system
     ├── tooltip.js          Custom tooltip system
-    └── shortcuts.js        Keyboard shortcut handler
+    ├── shortcuts.js        Keyboard shortcut handler
+    └── dmm/                Serial DMM support (experimental)
+        ├── meter-db.js     Database of 55+ supported serial multimeters
+        ├── dmm-manager.js  WebSerial port manager with FIFO packet framing
+        └── decoders/
+            ├── metex14.js  Metex14/PeakTech10/Voltcraft ASCII decoder
+            └── vc820.js    VC820/FS9721 14-byte binary decoder
 ```
 
 ## Protocol
@@ -133,7 +140,9 @@ This project builds on and was adapted from the following:
 - **[uPlot](https://github.com/leeoniya/uPlot)** by Leon Sorokin — ultra-fast time-series charting library used for real-time graph rendering
 - **[pako](https://github.com/nicolo-ribaudo/pako-es)** — JavaScript zlib implementation used to decompress the Mooshimeter's config tree data
 - **[NIST ITS-90 Thermocouple Database](https://srdata.nist.gov/its90/main/)** — polynomial coefficients for K, J, and T type thermocouple voltage-to-temperature conversion
+- **[QtDMM](https://github.com/tuxmaster/QtDMM)** — Qt-based multimeter GUI that provided the reference protocol implementations for serial DMM decoders (Metex14 ASCII, VC820/FS9721 binary, and meter hardware database)
 - **[Web Bluetooth API](https://webbluetoothcg.github.io/web-bluetooth/)** — W3C Community Group specification for browser-based Bluetooth Low Energy access
+- **[Web Serial API](https://wicg.github.io/serial/)** — WICG specification for browser-based serial port access, used for the experimental DMM feature
 
 The Python companion code in the parent project uses [Bleak](https://github.com/hbldh/bleak) for cross-platform BLE and [Matplotlib](https://matplotlib.org/) for desktop graphing.
 
