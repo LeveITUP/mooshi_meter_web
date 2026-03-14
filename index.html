@@ -13,237 +13,274 @@
 </head>
 <body class="theme-light">
 
-<!-- Combined header -->
+<!-- Header -->
 <div class="header">
     <h1><span>&#9889;</span> Mooshimeter</h1>
 
+    <!-- Menu bar -->
+    <div class="header-menus" id="header-menus">
+        <div class="menu-group">
+            <button class="menu-btn" data-menu="connect"><i class="fa-solid fa-plug"></i> Connect</button>
+            <div class="menu-panel" id="menu-connect">
+                <div class="menu-section">
+                    <div class="menu-section-title"><i class="fa-brands fa-bluetooth-b"></i> Mooshimeter (BLE)</div>
+                    <div class="menu-row">
+                        <button id="btn-scan" class="primary" title="Open the Bluetooth device picker and connect to a Mooshimeter"><i class="fa-brands fa-bluetooth-b"></i> Scan &amp; Connect</button>
+                        <button id="btn-disconnect" disabled title="Disconnect from the current Mooshimeter"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
+                    </div>
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-section">
+                    <div class="menu-section-title"><i class="fa-solid fa-plug"></i> Serial DMM (WebSerial) <span class="badge-experimental">Experimental</span></div>
+                    <div class="menu-field">
+                        <label>Meter</label>
+                        <select id="dmm-meter" title="Select your serial multimeter model. Requires a USB-serial adapter and WebSerial API (Chrome/Edge)"></select>
+                    </div>
+                    <div class="menu-row">
+                        <button id="btn-dmm-connect" class="small" title="Open the serial port picker and connect to the selected meter"><i class="fa-solid fa-plug"></i> Connect</button>
+                        <button id="btn-dmm-disconnect" class="small" disabled title="Disconnect from the serial meter"><i class="fa-solid fa-plug-circle-xmark"></i> Disconnect</button>
+                        <span id="dmm-status" class="menu-hint">Not connected</span>
+                    </div>
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-section">
+                    <div class="menu-section-title"><i class="fa-solid fa-microchip"></i> Device Info</div>
+                    <div class="menu-info-grid">
+                        <span>Name:</span> <strong id="device-name">---</strong>
+                        <span>Battery:</span> <strong id="bat-value">---</strong>
+                        <span>PCB:</span> <strong id="pcb-value">---</strong>
+                    </div>
+                    <div class="menu-row" style="margin-top:8px;">
+                        <button id="btn-sync-time" class="small" disabled title="Sync the Mooshimeter's internal clock to your computer's current time (UTC)"><i class="fa-solid fa-clock"></i> Sync Time</button>
+                        <button id="btn-reboot" class="small danger" disabled title="Reboot the Mooshimeter. The device will disconnect and must be re-paired"><i class="fa-solid fa-power-off"></i> Reboot</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-group">
+            <button class="menu-btn" data-menu="measure"><i class="fa-solid fa-sliders"></i> Measure</button>
+            <div class="menu-panel menu-panel-wide" id="menu-measure">
+                <div class="menu-columns">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Channel 1</div>
+                        <div class="menu-field">
+                            <label>Input</label>
+                            <select id="ch1-input" disabled title="Select measurement type: Current, Temperature, Aux Voltage, Resistance, or Diode test">
+                                <option>Current DC</option><option>Current AC</option>
+                                <option>Temperature</option><option>Aux Voltage DC</option>
+                                <option>Aux Voltage AC</option><option>Resistance</option>
+                                <option>Diode Drop</option>
+                            </select>
+                        </div>
+                        <div class="menu-field">
+                            <label>Range</label>
+                            <select id="ch1-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
+                        </div>
+                        <button id="ch1-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Channel 2</div>
+                        <div class="menu-field">
+                            <label>Input</label>
+                            <select id="ch2-input" disabled title="Select measurement type: Voltage, Temperature, Aux Voltage, Resistance, or Diode test">
+                                <option>Voltage DC</option><option>Voltage AC</option>
+                                <option>Temperature</option><option>Aux Voltage DC</option>
+                                <option>Aux Voltage AC</option><option>Resistance</option>
+                                <option>Diode Drop</option>
+                            </select>
+                        </div>
+                        <div class="menu-field">
+                            <label>Range</label>
+                            <select id="ch2-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
+                        </div>
+                        <button id="ch2-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
+                    </div>
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-columns">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Math</div>
+                        <div class="menu-field">
+                            <label>Function</label>
+                            <select id="math-input" disabled title="Computed channel: power calculations from CH1 x CH2, or thermocouple temperature from Aux V + internal temp sensor">
+                                <option>Off</option><option>Real Power</option>
+                                <option>Apparent Power</option><option>Power Factor</option>
+                                <option>Thermocouple K</option><option>Thermocouple J</option>
+                                <option>Thermocouple T</option>
+                            </select>
+                        </div>
+                        <button id="btn-continuity" class="small active" disabled title="Audible beep when Resistance is below 40 ohms or Diode forward voltage is detected"><i class="fa-solid fa-volume-high"></i> Beep: ON</button>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Sampling</div>
+                        <div class="menu-field">
+                            <label>Rate</label>
+                            <select id="samp-rate" disabled title="ADC sample rate in Hz. Higher rates give faster updates but more noise"></select>
+                        </div>
+                        <div class="menu-field">
+                            <label>Depth</label>
+                            <select id="samp-depth" disabled title="Number of ADC samples averaged per reading. Higher depth reduces noise but slows update rate"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-group">
+            <button class="menu-btn" data-menu="logging"><i class="fa-solid fa-hard-drive"></i> Logging</button>
+            <div class="menu-panel" id="menu-logging">
+                <div class="menu-section">
+                    <div class="menu-section-title"><i class="fa-solid fa-database"></i> Browser Logging</div>
+                    <div class="menu-row">
+                        <button id="btn-log" disabled title="Record all incoming samples to IndexedDB. Supports 24hr+ sessions. Click again to stop"><i class="fa-solid fa-circle-dot"></i> Start Log</button>
+                        <button id="btn-sessions" class="small" title="View, export, and manage saved logging sessions stored in your browser"><i class="fa-solid fa-folder-open"></i> Sessions</button>
+                    </div>
+                    <span id="log-status" class="menu-hint">Not logging</span>
+                </div>
+                <div class="menu-divider"></div>
+                <div class="menu-section">
+                    <div class="menu-section-title"><i class="fa-solid fa-sd-card"></i> SD Card</div>
+                    <div class="menu-row">
+                        <button id="btn-sd-log" class="small" disabled title="Enable or disable logging to the Mooshimeter's on-board SD card"><i class="fa-solid fa-sd-card"></i> Enable</button>
+                        <div class="menu-field inline">
+                            <label>Interval</label>
+                            <select id="sd-interval" disabled title="How often the meter writes a sample to the SD card">
+                                <option>Max</option><option>1s</option><option>10s</option>
+                                <option>1min</option><option>10min</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streaming controls (always visible) -->
+    <div class="header-controls">
+        <button id="btn-stream" disabled title="Start or stop continuous measurement streaming (Space)"><i class="fa-solid fa-play"></i> Start</button>
+        <button id="btn-single" class="small" disabled title="Take a single measurement snapshot"><i class="fa-solid fa-camera"></i></button>
+        <button id="btn-hold" class="small" disabled title="Freeze the display. Streaming continues in background for graph/logging (H)"><i class="fa-solid fa-pause"></i> Hold</button>
+    </div>
+
+    <span style="flex:1;"></span>
+
+    <!-- Utility buttons -->
     <div class="header-actions">
-        <button id="btn-scan" class="primary" title="Open the Bluetooth device picker and connect to a Mooshimeter"><i class="fa-brands fa-bluetooth-b"></i> Scan &amp; Connect</button>
-        <button id="btn-disconnect" disabled title="Disconnect from the current Mooshimeter"><i class="fa-solid fa-link-slash"></i> Disconnect</button>
-        <span class="header-divider"></span>
         <button id="btn-theme" class="header-icon-btn" title="Toggle between dark and light theme"><i class="fa-solid fa-sun"></i></button>
         <button id="btn-about" class="header-icon-btn" title="About this app"><i class="fa-solid fa-circle-info"></i></button>
     </div>
 
+    <!-- Status -->
     <div class="header-status">
         <span class="conn-dot" id="conn-dot" title="Connection status"></span>
-        <span class="status-badge" title="Name of the connected Mooshimeter device">Device: <strong id="device-name">---</strong></span>
-        <span class="status-badge" title="Battery voltage (warns below 2.8V, critical below 2.5V)">Battery: <strong id="bat-value">---</strong></span>
-        <span class="status-badge" title="Mooshimeter PCB hardware revision">PCB: <strong id="pcb-value">---</strong></span>
         <span id="sample-count" class="status-badge" style="display:none;" title="Total measurement samples received this session"></span>
         <span id="status-text" class="status-info"></span>
     </div>
 </div>
 
-<div class="main">
+<!-- Measurement bar — dynamic based on connected device -->
+<div class="measure-bar" id="measure-bar">
 
-    <!-- LEFT: Controls panel -->
-    <div class="panel-left" id="panel-left">
+    <!-- No device connected -->
+    <div class="measure-section" id="measure-none">
+        <div class="measure-placeholder">
+            <i class="fa-solid fa-plug"></i> Connect a device to begin measuring
+        </div>
+    </div>
 
-        <!-- CH1 -->
-        <div class="card channel-card ch1">
-            <div class="card-title">Channel 1</div>
-            <div class="channel-value" id="ch1-value" title="Current CH1 measurement reading">---</div>
-            <div class="channel-stats" id="ch1-stats">
+    <!-- Mooshimeter readings -->
+    <div class="measure-section" id="measure-mooshi" style="display:none;">
+        <div class="measure-card ch1">
+            <div class="measure-label" id="ch1-label">Channel 1</div>
+            <div class="measure-value" id="ch1-value">---</div>
+            <div class="measure-stats">
                 <span class="stat"><span class="stat-label">Min</span> <span class="stat-val" id="ch1-min">---</span></span>
                 <span class="stat"><span class="stat-label">Max</span> <span class="stat-val" id="ch1-max">---</span></span>
                 <span class="stat"><span class="stat-label">Avg</span> <span class="stat-val" id="ch1-avg">---</span></span>
             </div>
-            <div class="channel-controls">
-                <div class="control-group">
-                    <label>Input</label>
-                    <select id="ch1-input" disabled title="Select measurement type: Current, Temperature, Aux Voltage, Resistance, or Diode test">
-                        <option>Current DC</option><option>Current AC</option>
-                        <option>Temperature</option><option>Aux Voltage DC</option>
-                        <option>Aux Voltage AC</option><option>Resistance</option>
-                        <option>Diode Drop</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>Range</label>
-                    <select id="ch1-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
-                </div>
-                <button id="ch1-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
-            </div>
         </div>
-
-        <!-- CH2 -->
-        <div class="card channel-card ch2">
-            <div class="card-title">Channel 2</div>
-            <div class="channel-value" id="ch2-value" title="Current CH2 measurement reading">---</div>
-            <div class="channel-stats" id="ch2-stats">
+        <div class="measure-card ch2">
+            <div class="measure-label" id="ch2-label">Channel 2</div>
+            <div class="measure-value" id="ch2-value">---</div>
+            <div class="measure-stats">
                 <span class="stat"><span class="stat-label">Min</span> <span class="stat-val" id="ch2-min">---</span></span>
                 <span class="stat"><span class="stat-label">Max</span> <span class="stat-val" id="ch2-max">---</span></span>
                 <span class="stat"><span class="stat-label">Avg</span> <span class="stat-val" id="ch2-avg">---</span></span>
             </div>
-            <div class="channel-controls">
-                <div class="control-group">
-                    <label>Input</label>
-                    <select id="ch2-input" disabled title="Select measurement type: Voltage, Temperature, Aux Voltage, Resistance, or Diode test">
-                        <option>Voltage DC</option><option>Voltage AC</option>
-                        <option>Temperature</option><option>Aux Voltage DC</option>
-                        <option>Aux Voltage AC</option><option>Resistance</option>
-                        <option>Diode Drop</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>Range</label>
-                    <select id="ch2-range" disabled title="Measurement range. Auto adjusts automatically based on the reading"></select>
-                </div>
-                <button id="ch2-zero" class="small" disabled title="Set current reading as zero offset (relative mode)"><i class="fa-solid fa-bullseye"></i> Zero</button>
+        </div>
+        <div class="measure-card math" id="measure-math-card" style="display:none;">
+            <div class="measure-label" id="math-label">Math</div>
+            <div class="measure-value" id="math-value">---</div>
+            <div class="measure-stats">
+                <span class="stat"><span class="stat-label">Min</span> <span class="stat-val" id="math-min">---</span></span>
+                <span class="stat"><span class="stat-label">Max</span> <span class="stat-val" id="math-max">---</span></span>
+                <span class="stat"><span class="stat-label">Avg</span> <span class="stat-val" id="math-avg">---</span></span>
             </div>
         </div>
-
-        <!-- Math channel (collapsible) -->
-        <div class="card channel-card math" data-collapsible>
-            <div class="card-title">Math <span class="collapse-icon"></span></div>
-            <div class="card-body">
-                <div class="channel-value math-value" id="math-value" title="Computed value derived from CH1 and CH2 readings">---</div>
-                <div class="channel-stats" id="math-stats">
-                    <span class="stat"><span class="stat-label">Min</span> <span class="stat-val" id="math-min">---</span></span>
-                    <span class="stat"><span class="stat-label">Max</span> <span class="stat-val" id="math-max">---</span></span>
-                    <span class="stat"><span class="stat-label">Avg</span> <span class="stat-val" id="math-avg">---</span></span>
-                </div>
-                <div class="channel-controls">
-                    <div class="control-group">
-                        <label>Function</label>
-                        <select id="math-input" disabled title="Computed channel: power calculations from CH1 x CH2, or thermocouple temperature from Aux V + internal temp sensor">
-                            <option>Off</option><option>Real Power</option>
-                            <option>Apparent Power</option><option>Power Factor</option>
-                            <option>Thermocouple K</option><option>Thermocouple J</option>
-                            <option>Thermocouple T</option>
-                        </select>
-                    </div>
-                    <button id="btn-continuity" class="small active" disabled title="Audible beep when Resistance is below 40 ohms or Diode forward voltage is detected"><i class="fa-solid fa-volume-high"></i> Beep: ON</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sampling (collapsible) -->
-        <div class="card" data-collapsible>
-            <div class="card-title">Sampling <span class="collapse-icon"></span></div>
-            <div class="card-body">
-                <div class="control-section">
-                    <div class="control-group">
-                        <label>Rate</label>
-                        <select id="samp-rate" disabled title="ADC sample rate in Hz. Higher rates give faster updates but more noise"></select>
-                    </div>
-                    <div class="control-group">
-                        <label>Depth</label>
-                        <select id="samp-depth" disabled title="Number of ADC samples averaged per reading. Higher depth reduces noise but slows update rate"></select>
-                    </div>
-                    <button id="btn-stream" disabled title="Start or stop continuous measurement streaming (Space)"><i class="fa-solid fa-play"></i> Start</button>
-                    <button id="btn-single" class="small" disabled title="Take a single measurement snapshot"><i class="fa-solid fa-camera"></i> Single</button>
-                    <button id="btn-hold" class="small" disabled title="Freeze the display. Streaming continues in background for graph/logging (H)"><i class="fa-solid fa-pause"></i> Hold</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Logging (collapsible) -->
-        <div class="card" data-collapsible>
-            <div class="card-title">Logging <span class="collapse-icon"></span></div>
-            <div class="card-body">
-                <div class="control-section">
-                    <button id="btn-log" disabled title="Record all incoming samples to IndexedDB. Supports 24hr+ sessions. Click again to stop"><i class="fa-solid fa-circle-dot"></i> Start Log</button>
-                    <button id="btn-sessions" class="small" title="View, export, and manage saved logging sessions stored in your browser"><i class="fa-solid fa-folder-open"></i> Sessions</button>
-                    <span id="log-status" style="font-size:11px; color:var(--text-dim);">Not logging</span>
-                </div>
-                <div class="control-section" style="margin-top:4px;">
-                    <div class="control-group">
-                        <label>SD</label>
-                        <button id="btn-sd-log" class="small" disabled title="Enable or disable logging to the Mooshimeter's on-board SD card"><i class="fa-solid fa-sd-card"></i> Enable</button>
-                    </div>
-                    <div class="control-group">
-                        <label>Interval</label>
-                        <select id="sd-interval" disabled title="How often the meter writes a sample to the SD card">
-                            <option>Max</option><option>1s</option><option>10s</option>
-                            <option>1min</option><option>10min</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Serial DMM (Experimental, collapsible) -->
-        <div class="card" data-collapsible>
-            <div class="card-title">Serial DMM <span class="badge-experimental">Experimental</span> <span class="collapse-icon"></span></div>
-            <div class="card-body">
-                <div class="control-section">
-                    <div class="control-group" style="flex:1;">
-                        <label>Meter</label>
-                        <select id="dmm-meter" title="Select your serial multimeter model. Requires a USB-serial adapter and WebSerial API (Chrome/Edge)"></select>
-                    </div>
-                </div>
-                <div class="control-section" style="margin-top:4px;">
-                    <button id="btn-dmm-connect" class="small" title="Open the serial port picker and connect to the selected meter"><i class="fa-solid fa-plug"></i> Connect</button>
-                    <button id="btn-dmm-disconnect" class="small" disabled title="Disconnect from the serial meter"><i class="fa-solid fa-plug-circle-xmark"></i> Disconnect</button>
-                    <span id="dmm-status" style="font-size:11px; color:var(--text-dim);">Not connected</span>
-                </div>
-                <div class="dmm-reading" id="dmm-reading" style="display:none;">
-                    <span class="dmm-value" id="dmm-value">---</span>
-                    <span class="dmm-unit" id="dmm-unit"></span>
-                    <span class="dmm-mode" id="dmm-mode"></span>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Resize handle -->
-    <div class="panel-resize-handle" id="panel-resize-handle"></div>
-
-    <!-- RIGHT: Graph + Table stacked panel -->
-    <div class="panel-right">
-
-        <!-- Graph pane -->
-        <div class="pane pane-graph" id="pane-graph">
-            <div class="pane-toolbar">
-                <span class="pane-title"><i class="fa-solid fa-chart-line"></i> Graph</span>
-                <div class="control-group">
-                    <label>Mode</label>
-                    <select id="graph-mode" title="Combined: both channels overlaid with dual Y-axes. Split: side-by-side graphs. CH1/CH2 Only: single channel view">
-                        <option value="combined" selected>Combined</option>
-                        <option value="split">Split</option>
-                        <option value="ch1">CH1 Only</option>
-                        <option value="ch2">CH2 Only</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>Points</label>
-                    <select id="graph-points" title="Maximum number of data points displayed. More points show longer history but may reduce performance">
-                        <option>100</option><option>200</option>
-                        <option selected>500</option><option>1000</option><option>2000</option>
-                    </select>
-                </div>
-                <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis"><i class="fa-solid fa-eraser"></i> Clear</button>
-                <button id="btn-graph-export" class="small" title="Download the visible data as a CSV file"><i class="fa-solid fa-file-csv"></i> Export</button>
-                <span style="flex:1;"></span>
-                <button id="btn-sync-time" class="small" disabled title="Sync the Mooshimeter's internal clock to your computer's current time (UTC)"><i class="fa-solid fa-clock"></i> Sync Time</button>
-                <button id="btn-reboot" class="small danger" disabled title="Reboot the Mooshimeter. The device will disconnect and must be re-paired"><i class="fa-solid fa-power-off"></i> Reboot</button>
+    <!-- DMM reading -->
+    <div class="measure-section" id="measure-dmm" style="display:none;">
+        <div class="measure-card dmm-card">
+            <div class="measure-label" id="dmm-mode-label">---</div>
+            <div class="measure-value" id="dmm-value">---</div>
+            <div class="dmm-detail">
+                <span class="dmm-unit" id="dmm-unit"></span>
+                <span class="dmm-flags" id="dmm-flags"></span>
             </div>
-            <div id="graph-container"></div>
         </div>
+    </div>
 
-        <!-- Vertical resize handle + swap button -->
-        <div class="pane-divider" id="pane-divider">
-            <button id="btn-swap-panes" class="pane-swap-btn" title="Swap graph and table positions"><i class="fa-solid fa-arrows-up-down"></i></button>
-        </div>
+</div>
 
-        <!-- Table pane -->
-        <div class="pane pane-table" id="pane-table">
-            <div class="pane-toolbar">
-                <span class="pane-title"><i class="fa-solid fa-table"></i> Table</span>
-                <div class="control-group">
-                    <label>Source</label>
-                    <select id="table-source" title="Live: streaming data in memory. Or select a saved session to browse its full IndexedDB history">
-                        <option value="live">Live</option>
-                    </select>
-                </div>
-                <span id="table-row-count" style="font-size:11px; color:var(--text-dim);" title="Total rows in the current data source"></span>
+<!-- Main content (full width) -->
+<div class="main">
+
+    <!-- Graph pane -->
+    <div class="pane pane-graph" id="pane-graph">
+        <div class="pane-toolbar">
+            <span class="pane-title"><i class="fa-solid fa-chart-line"></i> Graph</span>
+            <div class="control-group">
+                <label>Mode</label>
+                <select id="graph-mode" title="Combined: both channels overlaid with dual Y-axes. Split: side-by-side graphs. CH1/CH2 Only: single channel view">
+                    <option value="combined" selected>Combined</option>
+                    <option value="split">Split</option>
+                    <option value="ch1">CH1 Only</option>
+                    <option value="ch2">CH2 Only</option>
+                </select>
             </div>
-            <div id="table-container"></div>
+            <div class="control-group">
+                <label>Points</label>
+                <select id="graph-points" title="Maximum number of data points displayed. More points show longer history but may reduce performance">
+                    <option>100</option><option>200</option>
+                    <option selected>500</option><option>1000</option><option>2000</option>
+                </select>
+            </div>
+            <button id="btn-graph-clear" class="small" title="Clear all graph data and reset the time axis"><i class="fa-solid fa-eraser"></i> Clear</button>
+            <button id="btn-graph-export" class="small" title="Download the visible data as a CSV file"><i class="fa-solid fa-file-csv"></i> Export</button>
         </div>
+        <div id="graph-container"></div>
+    </div>
 
+    <!-- Vertical resize handle + swap button -->
+    <div class="pane-divider" id="pane-divider">
+        <button id="btn-swap-panes" class="pane-swap-btn" title="Swap graph and table positions"><i class="fa-solid fa-arrows-up-down"></i></button>
+    </div>
+
+    <!-- Table pane -->
+    <div class="pane pane-table" id="pane-table">
+        <div class="pane-toolbar">
+            <span class="pane-title"><i class="fa-solid fa-table"></i> Table</span>
+            <div class="control-group">
+                <label>Source</label>
+                <select id="table-source" title="Live: streaming data in memory. Or select a saved session to browse its full IndexedDB history">
+                    <option value="live">Live</option>
+                </select>
+            </div>
+            <span id="table-row-count" style="font-size:11px; color:var(--text-dim);" title="Total rows in the current data source"></span>
+        </div>
+        <div id="table-container"></div>
     </div>
 
 </div>
@@ -277,13 +314,14 @@
                     <li><strong>Long-duration logging</strong> &mdash; record 24hr+ sessions to IndexedDB with CSV export</li>
                     <li><strong>Math channels</strong> &mdash; real power, apparent power, power factor, and thermocouple (K/J/T) calculations</li>
                     <li><strong>Auto-ranging &amp; continuity</strong> &mdash; automatic range selection with audible continuity beep</li>
+                    <li><strong>Serial DMM support</strong> &mdash; connect 55+ serial multimeters via WebSerial (experimental)</li>
                 </ul>
             </div>
             <div class="welcome-section">
                 <h3>Getting started</h3>
                 <ol>
                     <li>Turn on your Mooshimeter</li>
-                    <li>Click <strong>Scan &amp; Connect</strong> and select your device from the Bluetooth picker</li>
+                    <li>Click <strong>Connect</strong> &rarr; <strong>Scan &amp; Connect</strong> and select your device</li>
                     <li>Press <strong>Start</strong> to begin streaming measurements</li>
                 </ol>
             </div>

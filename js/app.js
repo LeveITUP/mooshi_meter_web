@@ -67,14 +67,16 @@ class App {
         // Hold/freeze display
         this.displayHeld = false;
 
+        // Device mode: "none", "mooshi", "dmm"
+        this._deviceMode = "none";
+
         // Min/Max/Avg stats
         this._ch1Stats = this._emptyStats();
         this._ch2Stats = this._emptyStats();
         this._mathStats = this._emptyStats();
 
         this._bindUI();
-        this._initAccordion();
-        this._initResizeHandle();
+        this._initMenus();
         this._initPaneResize();
         this._initTheme();
         this._initGraph();
@@ -86,11 +88,73 @@ class App {
         initShortcuts(this);
     }
 
+    // --- Device mode switching ---
+
+    _setDeviceMode(mode) {
+        this._deviceMode = mode;
+        document.getElementById("measure-none").style.display = mode === "none" ? "" : "none";
+        document.getElementById("measure-mooshi").style.display = mode === "mooshi" ? "" : "none";
+        document.getElementById("measure-dmm").style.display = mode === "dmm" ? "" : "none";
+
+        // Auto-switch graph mode for DMM (single channel)
+        if (mode === "dmm") {
+            const graphMode = document.getElementById("graph-mode");
+            graphMode.value = "ch1";
+            if (this.graph) this.graph.setMode("ch1");
+        }
+    }
+
+    // --- Dropdown menu system ---
+
+    _initMenus() {
+        const menus = document.getElementById("header-menus");
+        if (!menus) return;
+
+        // Toggle menu on button click
+        menus.querySelectorAll(".menu-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const menuId = btn.dataset.menu;
+                const panel = document.getElementById(`menu-${menuId}`);
+                const isOpen = panel.classList.contains("open");
+
+                // Close all menus first
+                this._closeAllMenus();
+
+                if (!isOpen) {
+                    panel.classList.add("open");
+                    btn.classList.add("active");
+                }
+            });
+        });
+
+        // Close menus when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".menu-group")) {
+                this._closeAllMenus();
+            }
+        });
+
+        // Close menus on Escape
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") this._closeAllMenus();
+        });
+
+        // Prevent menu panels from closing when clicking inside them
+        menus.querySelectorAll(".menu-panel").forEach(panel => {
+            panel.addEventListener("click", (e) => e.stopPropagation());
+        });
+    }
+
+    _closeAllMenus() {
+        document.querySelectorAll(".menu-panel.open").forEach(p => p.classList.remove("open"));
+        document.querySelectorAll(".menu-btn.active").forEach(b => b.classList.remove("active"));
+    }
+
     // --- Theme toggle ---
 
     _initTheme() {
         const saved = localStorage.getItem("mooshi:theme");
-        // Default is light (set in HTML), only switch if explicitly saved as dark
         if (saved === "dark") this._applyTheme("dark");
 
         document.getElementById("btn-theme").addEventListener("click", () => {
@@ -242,68 +306,6 @@ class App {
         });
     }
 
-    // --- Collapsible accordion ---
-
-    _initAccordion() {
-        document.querySelectorAll("[data-collapsible] > .card-title").forEach(title => {
-            title.addEventListener("click", () => {
-                const card = title.parentElement;
-                card.classList.toggle("collapsed");
-                // Persist state
-                const key = `collapsed:${card.querySelector(".card-title").textContent.trim().toLowerCase()}`;
-                localStorage.setItem(key, card.classList.contains("collapsed") ? "1" : "0");
-            });
-        });
-
-        // Restore saved state
-        document.querySelectorAll("[data-collapsible]").forEach(card => {
-            const key = `collapsed:${card.querySelector(".card-title").textContent.trim().toLowerCase()}`;
-            if (localStorage.getItem(key) === "1") {
-                card.classList.add("collapsed");
-            }
-        });
-    }
-
-    // --- Drag-resizable left panel ---
-
-    _initResizeHandle() {
-        const handle = document.getElementById("panel-resize-handle");
-        const panel = document.getElementById("panel-left");
-        let startX, startW;
-
-        const onMove = (e) => {
-            const newW = Math.max(250, Math.min(600, startW + e.clientX - startX));
-            document.documentElement.style.setProperty("--panel-left-width", newW + "px");
-        };
-
-        const onUp = () => {
-            handle.classList.remove("dragging");
-            document.body.classList.remove("panel-resizing");
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-            localStorage.setItem("panel-width", panel.offsetWidth);
-        };
-
-        handle.addEventListener("mousedown", (e) => {
-            e.preventDefault();
-            startX = e.clientX;
-            startW = panel.offsetWidth;
-            handle.classList.add("dragging");
-            document.body.classList.add("panel-resizing");
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", onUp);
-        });
-
-        // Restore saved width
-        const saved = localStorage.getItem("panel-width");
-        if (saved) {
-            const w = parseInt(saved);
-            if (w >= 250 && w <= 600) {
-                document.documentElement.style.setProperty("--panel-left-width", w + "px");
-            }
-        }
-    }
-
     // --- Hold/freeze display ---
 
     _toggleHold() {
@@ -329,7 +331,6 @@ class App {
         stats.sum += value;
         stats.count++;
 
-        // Update DOM every 5th sample to reduce writes
         if (stats.count % 5 !== 0) return;
         const avg = stats.sum / stats.count;
 
@@ -392,15 +393,15 @@ class App {
 
     _initPaneResize() {
         const divider = document.getElementById("pane-divider");
-        const panel = document.querySelector(".panel-right");
+        const main = document.querySelector(".main");
         const graphPane = document.getElementById("pane-graph");
         let startY, startH;
 
         const onMove = (e) => {
-            const panelRect = panel.getBoundingClientRect();
-            const newH = Math.max(80, Math.min(panelRect.height - 120, startH + e.clientY - startY));
-            const pct = (newH / panelRect.height * 100).toFixed(1);
-            panel.style.setProperty("--pane-split", pct + "%");
+            const mainRect = main.getBoundingClientRect();
+            const newH = Math.max(80, Math.min(mainRect.height - 120, startH + e.clientY - startY));
+            const pct = (newH / mainRect.height * 100).toFixed(1);
+            main.style.setProperty("--pane-split", pct + "%");
         };
 
         const onUp = () => {
@@ -408,8 +409,7 @@ class App {
             document.body.classList.remove("pane-resizing");
             document.removeEventListener("mousemove", onMove);
             document.removeEventListener("mouseup", onUp);
-            localStorage.setItem("mooshi:pane-split", panel.style.getPropertyValue("--pane-split"));
-            // Trigger graph resize
+            localStorage.setItem("mooshi:pane-split", main.style.getPropertyValue("--pane-split"));
             if (this.graph) this.graph.refresh();
         };
 
@@ -423,30 +423,28 @@ class App {
             document.addEventListener("mouseup", onUp);
         });
 
-        // Restore saved split
         const saved = localStorage.getItem("mooshi:pane-split");
-        if (saved) panel.style.setProperty("--pane-split", saved);
+        if (saved) main.style.setProperty("--pane-split", saved);
     }
 
     _swapPanes() {
-        const panel = document.querySelector(".panel-right");
+        const main = document.querySelector(".main");
         const graphPane = document.getElementById("pane-graph");
         const tablePane = document.getElementById("pane-table");
         const divider = document.getElementById("pane-divider");
 
-        const isSwapped = panel.classList.toggle("panes-swapped");
+        const isSwapped = main.classList.toggle("panes-swapped");
 
         if (isSwapped) {
-            panel.insertBefore(tablePane, graphPane);
-            panel.insertBefore(divider, graphPane);
+            main.insertBefore(tablePane, graphPane);
+            main.insertBefore(divider, graphPane);
         } else {
-            panel.insertBefore(graphPane, tablePane);
-            panel.insertBefore(divider, tablePane);
+            main.insertBefore(graphPane, tablePane);
+            main.insertBefore(divider, tablePane);
         }
 
         localStorage.setItem("mooshi:panes-swapped", isSwapped ? "1" : "0");
 
-        // Refresh graph dimensions after DOM reflow
         requestAnimationFrame(() => {
             if (this.graph) this.graph.refresh();
         });
@@ -570,6 +568,10 @@ class App {
         if (ch === 1) this.ch1Input = desc;
         else this.ch2Input = desc;
 
+        // Update measurement bar label
+        const labelEl = document.getElementById(`ch${ch}-label`);
+        if (labelEl) labelEl.textContent = desc.label;
+
         const mappingIdx = findMappingIndex(this.meter, ch, desc.mapping);
         if (mappingIdx < 0) { console.warn(`Mapping "${desc.mapping}" not found`); return; }
 
@@ -597,8 +599,15 @@ class App {
     _onMathChanged() {
         const sel = document.getElementById("math-input");
         this.mathInput = MATH_INPUTS[sel.selectedIndex] || null;
+
+        const mathCard = document.getElementById("measure-math-card");
         if (!this.mathInput || this.mathInput.id === "off") {
+            if (mathCard) mathCard.style.display = "none";
             document.getElementById("math-value").textContent = "---";
+        } else {
+            if (mathCard) mathCard.style.display = "";
+            const labelEl = document.getElementById("math-label");
+            if (labelEl) labelEl.textContent = this.mathInput.label;
         }
         this._resetStats(this._mathStats, "math");
     }
@@ -631,6 +640,7 @@ class App {
     _attachMeterEvents() {
         this.meter.addEventListener("connected", () => {
             this._setConnectionState("connected");
+            this._setDeviceMode("mooshi");
             document.getElementById("btn-scan").disabled = true;
             document.getElementById("btn-disconnect").disabled = false;
             this._enableControls(true);
@@ -641,6 +651,7 @@ class App {
 
         this.meter.addEventListener("disconnected", () => {
             this._setConnectionState("disconnected");
+            this._setDeviceMode("none");
             this._setStatus("Disconnected");
             document.getElementById("btn-scan").disabled = false;
             document.getElementById("btn-disconnect").disabled = true;
@@ -726,6 +737,16 @@ class App {
         this.ch2Input = this.ch2Inputs[0] || null;
         this.mathInput = MATH_INPUTS[0];
 
+        // Update measurement bar labels
+        if (this.ch1Input) {
+            const l1 = document.getElementById("ch1-label");
+            if (l1) l1.textContent = this.ch1Input.label;
+        }
+        if (this.ch2Input) {
+            const l2 = document.getElementById("ch2-label");
+            if (l2) l2.textContent = this.ch2Input.label;
+        }
+
         this._refreshRanges(1);
         this._refreshRanges(2);
 
@@ -768,7 +789,6 @@ class App {
         const el = document.getElementById(`ch${ch}-value`);
         el.textContent = display;
 
-        // Value flash animation
         el.classList.remove("flash");
         void el.offsetWidth;
         el.classList.add("flash");
@@ -873,19 +893,34 @@ class App {
     // --- Streaming ---
 
     _toggleStream() {
-        if (!this.meter?.isConnected) return;
+        if (this._deviceMode === "none") return;
+
         const btn = document.getElementById("btn-stream");
-        if (this.streaming) {
-            this._sendCmd("SAMPLING:TRIGGER 0");
-            btn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
-            btn.classList.remove("active");
-            this.streaming = false;
-        } else {
-            this._sendCmd("SAMPLING:TRIGGER 2");
-            btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
-            btn.classList.add("active");
-            this.streaming = true;
-            this._resetAllStats();
+
+        // For Mooshimeter
+        if (this._deviceMode === "mooshi" && this.meter?.isConnected) {
+            if (this.streaming) {
+                this._sendCmd("SAMPLING:TRIGGER 0");
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+                btn.classList.remove("active");
+                this.streaming = false;
+            } else {
+                this._sendCmd("SAMPLING:TRIGGER 2");
+                btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+                btn.classList.add("active");
+                this.streaming = true;
+                this._resetAllStats();
+            }
+        }
+
+        // For DMM — streaming is always on when connected, but we toggle the UI state
+        if (this._deviceMode === "dmm") {
+            this.streaming = !this.streaming;
+            btn.innerHTML = this.streaming
+                ? '<i class="fa-solid fa-stop"></i> Stop'
+                : '<i class="fa-solid fa-play"></i> Start';
+            btn.classList.toggle("active", this.streaming);
+            if (this.streaming) this._resetAllStats();
         }
     }
 
@@ -1137,6 +1172,7 @@ class App {
             if (holdBtn) { holdBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Hold'; holdBtn.classList.remove("active"); }
         }
     }
+
     // --- Serial DMM (Experimental) ---
 
     _initDmm() {
@@ -1170,7 +1206,6 @@ class App {
             sel.appendChild(optgroup);
         }
 
-        // Check WebSerial support
         if (!DmmManager.isSupported()) {
             connectBtn.disabled = true;
             connectBtn.title = "WebSerial API not available. Use Chrome or Edge 89+";
@@ -1192,18 +1227,33 @@ class App {
         this.dmm = new DmmManager();
 
         this.dmm.addEventListener("connected", (e) => {
+            this._setDeviceMode("dmm");
+            this._setConnectionState("connected");
             document.getElementById("btn-dmm-connect").disabled = true;
             document.getElementById("btn-dmm-disconnect").disabled = false;
             document.getElementById("dmm-status").textContent = `Connected: ${e.detail.name}`;
-            document.getElementById("dmm-reading").style.display = "";
+
+            // Enable streaming controls for DMM
+            document.getElementById("btn-stream").disabled = false;
+            document.getElementById("btn-hold").disabled = false;
+            document.getElementById("btn-log").disabled = false;
+
+            // Update device info
+            document.getElementById("device-name").textContent = e.detail.name;
+
             showToast(`DMM connected: ${e.detail.name}`, { type: "success", duration: 2000 });
         });
 
         this.dmm.addEventListener("disconnected", () => {
+            this._setDeviceMode("none");
+            this._setConnectionState("disconnected");
             document.getElementById("btn-dmm-connect").disabled = false;
             document.getElementById("btn-dmm-disconnect").disabled = true;
             document.getElementById("dmm-status").textContent = "Disconnected";
-            document.getElementById("dmm-reading").style.display = "none";
+            document.getElementById("btn-stream").disabled = true;
+            document.getElementById("btn-hold").disabled = true;
+            document.getElementById("btn-log").disabled = true;
+            document.getElementById("device-name").textContent = "---";
             this.dmm = null;
         });
 
@@ -1214,27 +1264,51 @@ class App {
 
         this.dmm.addEventListener("reading", (e) => {
             const r = e.detail;
-            // Update DMM display
+
+            // Update DMM measurement bar
             const valEl = document.getElementById("dmm-value");
             const unitEl = document.getElementById("dmm-unit");
-            const modeEl = document.getElementById("dmm-mode");
+            const modeEl = document.getElementById("dmm-mode-label");
+            const flagsEl = document.getElementById("dmm-flags");
 
+            // Mode label
+            const modeLabels = {
+                ac: "AC", dc: "DC", resistance: "Resistance", diode: "Diode",
+                frequency: "Frequency", capacitance: "Capacitance",
+                temperature: "Temperature", duty: "Duty Cycle",
+            };
+            const modeText = modeLabels[r.mode] || r.mode || "---";
+            const unitText = (r.unit || "");
+            modeEl.textContent = r.ac ? `AC ${unitText}` : r.dc ? `DC ${unitText}` : `${modeText} ${unitText}`.trim();
+
+            // Value
             valEl.textContent = r.overload ? "OL" : r.display;
-            unitEl.textContent = (r.prefix || "") + (r.unit || "");
-            modeEl.textContent = r.mode || "";
+            valEl.classList.remove("flash");
+            void valEl.offsetWidth;
+            valEl.classList.add("flash");
 
-            // Feed to graph as CH1 (CH2 = null)
-            if (this.graph && r.value !== null) {
-                this.graph.addSample(r.value, null);
+            // Unit with prefix
+            unitEl.textContent = r.overload ? "" : (r.prefix || "") + (r.unit || "");
+
+            // Flags (for VC820-type meters with rich flag data)
+            if (r.auto !== undefined) {
+                const flags = [];
+                if (r.auto) flags.push({ label: "AUTO", active: true });
+                if (r.hold) flags.push({ label: "HOLD", active: true });
+                if (r.relative) flags.push({ label: "REL", active: true });
+                if (r.diode) flags.push({ label: "DIODE", active: true });
+                if (r.continuity) flags.push({ label: "BEEP", active: true });
+                if (r.lowBattery) flags.push({ label: "LOW BAT", active: true });
+                flagsEl.innerHTML = flags.map(f =>
+                    `<span class="dmm-flag${f.active ? " active" : ""}">${f.label}</span>`
+                ).join("");
+            } else {
+                flagsEl.innerHTML = "";
             }
 
-            // Update CH1 value display
-            if (!this.displayHeld && r.value !== null) {
-                const el = document.getElementById("ch1-value");
-                el.textContent = r.overload ? "OL" : `${r.display} ${(r.prefix || "") + (r.unit || "")}`;
-                el.classList.remove("flash");
-                void el.offsetWidth;
-                el.classList.add("flash");
+            // Feed to graph
+            if (this.graph && r.value !== null) {
+                this.graph.addSample(r.value, null);
             }
 
             this.sampleCount++;
