@@ -148,6 +148,26 @@ export class SampleStore {
         });
     }
 
+    /** Update a session's title and note after stopping. */
+    async updateSessionMeta(sessionId, title, note) {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction("sessions", "readwrite");
+            const store = tx.objectStore("sessions");
+            const getReq = store.get(sessionId);
+
+            getReq.onsuccess = () => {
+                const session = getReq.result;
+                if (session) {
+                    if (title !== undefined) session.title = title;
+                    if (note !== undefined) session.note = note;
+                    store.put(session);
+                }
+                tx.oncomplete = () => resolve(session);
+            };
+            getReq.onerror = (e) => reject(e.target.error);
+        });
+    }
+
     get isRecording() {
         return this._activeSessionId !== null;
     }
@@ -225,7 +245,13 @@ export class SampleStore {
         const ch2Label = session.ch2Label || "CH2";
 
         // Stream samples in chunks to build CSV
-        const chunks = [`Time(s),${ch1Label},${ch2Label}\n`];
+        const chunks = [];
+
+        // Prepend title and note as metadata rows if set
+        if (session.title) chunks.push(`Title,${session.title}\n`);
+        if (session.note) chunks.push(`Note,${session.note}\n`);
+
+        chunks.push(`Time(s),${ch1Label},${ch2Label}\n`);
         let lineBuffer = [];
         const CHUNK_LINES = 5000;
 

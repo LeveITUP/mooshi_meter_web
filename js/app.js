@@ -471,7 +471,8 @@ class App {
                 const dur = s.endTime ? formatDuration(s.endTime - s.startTime) : "active";
                 const opt = document.createElement("option");
                 opt.value = `session:${s.id}`;
-                opt.textContent = `${date} (${dur}, ${count} rows)`;
+                const label = s.title ? `${s.title} — ${date} (${dur})` : `${date} (${dur}, ${count} rows)`;
+                opt.textContent = label;
                 sel.appendChild(opt);
             }
         } catch (e) { /* IDB not ready */ }
@@ -947,7 +948,12 @@ class App {
             const count = session?.sampleCount || 0;
             const dur = session ? formatDuration(session.endTime - session.startTime) : "";
             status.textContent = `Saved ${count.toLocaleString()} samples (${dur})`;
-            showToast(`Logged ${count.toLocaleString()} samples (${dur})`, { type: "success" });
+
+            // Show save-session modal for title/note
+            if (session) {
+                this._showSaveSessionModal(session);
+            }
+
             this._populateTableSources();
         } else {
             const ch1Label = this.ch1Input?.label || "CH1";
@@ -981,6 +987,77 @@ class App {
         if (this._logUpdateTimer) { clearInterval(this._logUpdateTimer); this._logUpdateTimer = null; }
     }
 
+    _showSaveSessionModal(session) {
+        const count = (session.sampleCount || 0).toLocaleString();
+        const dur = session.endTime ? formatDuration(session.endTime - session.startTime) : "";
+
+        const modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.id = "save-session-modal";
+        modal.innerHTML = `
+            <div class="modal-content" style="min-width:380px; max-width:460px;">
+                <div class="modal-header">
+                    <span class="card-title" style="margin:0; font-size:13px;">Session Saved</span>
+                    <span style="font-size:11px; color:var(--text-dim);">${count} samples &middot; ${dur}</span>
+                    <span style="flex:1;"></span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                    <div>
+                        <label style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-dim); display:block; margin-bottom:3px;">Title</label>
+                        <input type="text" id="session-title-input" placeholder="e.g. Motor startup test" style="width:100%; padding:6px 8px; font-size:13px; background:var(--bg-input); color:var(--text); border:1px solid var(--border); border-radius:4px; outline:none; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-dim); display:block; margin-bottom:3px;">Note</label>
+                        <textarea id="session-note-input" rows="3" placeholder="Optional notes about this session..." style="width:100%; padding:6px 8px; font-size:13px; background:var(--bg-input); color:var(--text); border:1px solid var(--border); border-radius:4px; outline:none; font-family:inherit; resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                    <button class="small" id="btn-session-skip">Skip</button>
+                    <button class="primary" id="btn-session-save"><i class="fa-solid fa-check"></i> Save</button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        const titleInput = document.getElementById("session-title-input");
+        const noteInput = document.getElementById("session-note-input");
+        titleInput.focus();
+
+        const close = () => modal.remove();
+
+        const save = async () => {
+            const title = titleInput.value.trim();
+            const note = noteInput.value.trim();
+            if (title || note) {
+                await this.sampleStore.updateSessionMeta(session.id, title || undefined, note || undefined);
+                this._populateTableSources();
+                showToast("Session saved" + (title ? `: ${title}` : ""), { type: "success", duration: 2000 });
+            } else {
+                showToast(`Logged ${count} samples (${dur})`, { type: "success" });
+            }
+            close();
+        };
+
+        document.getElementById("btn-session-skip").addEventListener("click", () => {
+            showToast(`Logged ${count} samples (${dur})`, { type: "success" });
+            close();
+        });
+        document.getElementById("btn-session-save").addEventListener("click", save);
+
+        // Enter in title saves, Escape skips
+        titleInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") { close(); showToast(`Logged ${count} samples (${dur})`, { type: "success" }); }
+        });
+        noteInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") { close(); showToast(`Logged ${count} samples (${dur})`, { type: "success" }); }
+        });
+
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) { close(); showToast(`Logged ${count} samples (${dur})`, { type: "success" }); }
+        });
+    }
+
     // --- Session Management Modal ---
 
     async _showSessionsModal() {
@@ -996,13 +1073,16 @@ class App {
 
         let rows = "";
         if (sessions.length === 0) {
-            rows = `<tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding:20px;">No saved sessions</td></tr>`;
+            rows = `<tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:20px;">No saved sessions</td></tr>`;
         } else {
             for (const s of sessions) {
                 const dur = s.endTime ? formatDuration(s.endTime - s.startTime) : "In progress...";
                 const date = new Date(s.startTime).toLocaleString();
                 const count = (s.sampleCount || 0).toLocaleString();
+                const title = s.title ? `<strong>${this._escHtml(s.title)}</strong>` : `<span style="color:var(--text-dim);">—</span>`;
+                const note = s.note ? `<span title="${this._escHtml(s.note)}" style="cursor:help;">${this._escHtml(s.note).substring(0, 40)}${s.note.length > 40 ? "…" : ""}</span>` : "";
                 rows += `<tr data-sid="${s.id}">
+                    <td>${title}${note ? `<br><span style="font-size:10px; color:var(--text-dim);">${note}</span>` : ""}</td>
                     <td>${date}</td><td>${dur}</td><td>${count}</td>
                     <td>
                         <button class="small session-export" data-sid="${s.id}" title="Export as CSV">Export</button>
@@ -1013,7 +1093,7 @@ class App {
         }
 
         modal.innerHTML = `
-            <div class="modal-content">
+            <div class="modal-content" style="min-width:600px; max-width:800px;">
                 <div class="modal-header">
                     <span class="card-title" style="margin:0; font-size:13px;">Saved Sessions</span>
                     <span style="font-size:11px; color:var(--text-dim);">Storage: ${formatBytes(est.used)} / ${formatBytes(est.quota)}</span>
@@ -1022,7 +1102,7 @@ class App {
                     <button class="small" id="btn-close-sessions">Close</button>
                 </div>
                 <table class="sessions-table">
-                    <thead><tr><th>Date</th><th>Duration</th><th>Samples</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Title</th><th>Date</th><th>Duration</th><th>Samples</th><th>Actions</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>`;
@@ -1142,6 +1222,12 @@ class App {
         if (this.meter?.isConnected) {
             this.meter.sendCommand(cmd).catch(e => console.error("Cmd error:", e));
         }
+    }
+
+    _escHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
     }
 
     _setStatus(msg, level = "info") {
