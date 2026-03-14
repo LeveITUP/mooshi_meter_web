@@ -79,6 +79,19 @@ The app communicates with the Mooshimeter over BLE using the proprietary Mooshim
 - **Config tree** with numbered shortcodes, transmitted as zlib-compressed data
 - Commands sent as `SHORTCODE VALUE` pairs; responses parsed from the config tree structure
 
+## Acknowledgements
+
+This project builds on and was adapted from the following:
+
+- **[Mooshimeter-PythonAPI](https://github.com/EEVblog/Mooshimeter-PythonAPI)** — EEVblog's Python API for the Mooshimeter, which provided the reference implementation for the BLE protocol, config tree structure, and command interface
+- **[Mooshimeter-AndroidApp](https://github.com/mooshim/Mooshimeter-AndroidApp)** — The original open-source Android app by Mooshim Engineering, used as protocol documentation for BLE service UUIDs, config tree encoding, and channel mapping conventions
+- **[uPlot](https://github.com/leeoniya/uPlot)** by Leon Sorokin — ultra-fast time-series charting library used for real-time graph rendering
+- **[pako](https://github.com/nicolo-ribaudo/pako-es)** — JavaScript zlib implementation used to decompress the Mooshimeter's config tree data
+- **[NIST ITS-90 Thermocouple Database](https://srdata.nist.gov/its90/main/)** — polynomial coefficients for K, J, and T type thermocouple voltage-to-temperature conversion
+- **[Web Bluetooth API](https://webbluetoothcg.github.io/web-bluetooth/)** — W3C Community Group specification for browser-based Bluetooth Low Energy access
+
+The Python companion code in the parent project uses [Bleak](https://github.com/hbldh/bleak) for cross-platform BLE and [Matplotlib](https://matplotlib.org/) for desktop graphing.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
