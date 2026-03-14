@@ -48,6 +48,47 @@ Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.l
 
 5. Press **Start** to begin streaming measurements.
 
+## Linux Setup
+
+Web Bluetooth is supported on Linux via Chrome/Chromium but requires a few extra steps:
+
+1. **Install BlueZ 5.41+** (the Linux Bluetooth stack):
+   ```bash
+   # Check your current version
+   bluetoothctl --version
+
+   # Install or update (Debian/Ubuntu)
+   sudo apt install bluez
+   ```
+
+2. **Start the Bluetooth service**:
+   ```bash
+   sudo systemctl enable bluetooth
+   sudo systemctl start bluetooth
+   ```
+
+3. **Add your user to the bluetooth group**:
+   ```bash
+   sudo usermod -aG bluetooth $USER
+   # Log out and back in for this to take effect
+   ```
+
+4. **Enable the Web Bluetooth flag in Chrome** (if not already enabled):
+   - Navigate to `chrome://flags/#enable-web-bluetooth`
+   - Set to **Enabled** and relaunch
+
+   Or launch Chrome from the terminal with:
+   ```bash
+   google-chrome --enable-features=WebBluetooth
+   ```
+
+5. **Run the server** as normal:
+   ```bash
+   python3 serve.py
+   ```
+
+> **Note:** The `serve.py` server uses `localhost`, which counts as a secure context for Web Bluetooth — no HTTPS certificate is needed.
+
 ## Project Structure
 
 ```
