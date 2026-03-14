@@ -81,11 +81,16 @@ class App {
     // --- First-run welcome dialog ---
 
     _showWelcomeIfFirstRun() {
-        if (localStorage.getItem("mooshi:welcomed") === "1") return;
+        this._initWelcomeDialog();
 
+        if (localStorage.getItem("mooshi:welcomed") !== "1") {
+            this._showWelcome();
+        }
+    }
+
+    _initWelcomeDialog() {
         const overlay = document.getElementById("welcome-overlay");
         if (!overlay) return;
-        overlay.style.display = "";
 
         const closeBtn = document.getElementById("btn-welcome-close");
         const dontShow = document.getElementById("welcome-dont-show");
@@ -101,6 +106,13 @@ class App {
         overlay.addEventListener("click", (e) => {
             if (e.target === overlay) close();
         });
+
+        document.getElementById("btn-about").addEventListener("click", () => this._showWelcome());
+    }
+
+    _showWelcome() {
+        const overlay = document.getElementById("welcome-overlay");
+        if (overlay) overlay.style.display = "";
     }
 
     // --- Bluetooth availability ---
