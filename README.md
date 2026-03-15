@@ -2,7 +2,9 @@
 
 A browser-based companion app for the [Mooshimeter](https://moosh.im/) wireless dual-channel multimeter, built with the Web Bluetooth API. Also supports **55+ serial multimeters** via the WebSerial API with a USB-serial adapter. This app replaces the original mobile app, letting you control and monitor your meter from any desktop running Chrome or Edge.
 
-Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.levelitup.tech)
+Live version available here: [mooshimeter.levelitup.tech](https://mooshimeter.levelitup.tech)
+
+> **Privacy:** This app runs entirely in your browser. No personal data is collected, transmitted, or stored on any server. All measurement data, logging sessions, and settings are processed and stored locally on your device using IndexedDB and localStorage. There are no analytics, cookies, or third-party tracking.
 
 <a href="https://buymeacoffee.com/marcus.levelitup" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="40"></a>
 
