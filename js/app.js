@@ -976,6 +976,7 @@ class App {
                 btn.classList.add("active");
                 this.streaming = true;
                 this._resetAllStats();
+                this._switchToLiveSource();
             }
         }
 
@@ -986,7 +987,22 @@ class App {
                 ? '<i class="fa-solid fa-stop"></i> Stop'
                 : '<i class="fa-solid fa-play"></i> Start';
             btn.classList.toggle("active", this.streaming);
-            if (this.streaming) this._resetAllStats();
+            if (this.streaming) {
+                this._resetAllStats();
+                this._switchToLiveSource();
+            }
+        }
+    }
+
+    _switchToLiveSource() {
+        if (this._tableSource !== "live") {
+            this._tableSource = "live";
+            const sel = document.getElementById("table-source");
+            sel.value = "live";
+            if (this.dataTable && this.graph) {
+                this.dataTable.setLiveSource(this.graph.data);
+            }
+            document.getElementById("table-row-count").textContent = "";
         }
     }
 

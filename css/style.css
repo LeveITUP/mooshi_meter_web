@@ -340,6 +340,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: right;
 }
 
 .measure-value {
@@ -347,8 +348,11 @@ body {
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.5px;
-    word-break: break-all;
-    line-height: 1.1;
+    line-height: 1.2;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: filter 0.05s;
 }
 
@@ -368,6 +372,7 @@ body {
 
 .measure-stats {
     display: flex;
+    justify-content: flex-end;
     gap: 10px;
     padding-top: 2px;
     font-family: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;

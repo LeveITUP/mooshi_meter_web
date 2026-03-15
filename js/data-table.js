@@ -180,6 +180,7 @@ export class DataTable {
 
     /** Attach in-memory graph data for live view. */
     setLiveSource(data) {
+        const wasSession = this._mode === "session";
         this._mode = "live";
         this._liveData = data;
         this._store = null;
@@ -187,7 +188,10 @@ export class DataTable {
         this._lastLiveLen = 0;
         this._liveRowData = [];
 
-        if (this._gridApi) {
+        // Must rebuild grid if switching from infinite row model (session) back to client-side
+        if (wasSession) {
+            this._build();
+        } else if (this._gridApi) {
             this._gridApi.setGridOption("rowData", []);
         }
     }
