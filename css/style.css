@@ -1,8 +1,8 @@
 /* MooshiMeter Web — Dark theme (VS Code inspired) */
 
 @font-face {
-    font-family: "Digits";
-    src: url("../fonts/digits.ttf") format("truetype");
+    font-family: "DS-Digital";
+    src: url("../fonts/DS-DIGI.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -371,15 +371,6 @@ body {
     animation: value-flash 0.3s ease-out;
 }
 
-/* Digits font has oversized ascender whitespace — crop it via clip-path */
-.measure-value.font-digits {
-    font-size: 32px;
-    line-height: 0.55;
-    padding-top: 0.6em;
-    clip-path: inset(0.35em 0 0 0);
-    margin-top: -0.35em;
-    margin-bottom: 2px;
-}
 
 .measure-stats {
     display: flex;
@@ -887,14 +878,6 @@ button.small {
 .bmc-link:hover { background: #ffd54f; transform: translateY(-1px); }
 .bmc-icon { font-size: 16px; }
 .welcome-support-text { font-size: 12px; color: var(--text-dim); }
-
-.welcome-credits {
-    padding: 4px 24px 0;
-    text-align: center;
-}
-.welcome-credits small { font-size: 11px; color: var(--text-dim); }
-.welcome-credits a { color: var(--accent); text-decoration: none; }
-.welcome-credits a:hover { text-decoration: underline; }
 
 .welcome-footer {
     display: flex;
