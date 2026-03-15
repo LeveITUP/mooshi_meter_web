@@ -371,10 +371,14 @@ body {
     animation: value-flash 0.3s ease-out;
 }
 
-/* Digits font has oversized ascender whitespace — crop it */
+/* Digits font has oversized ascender whitespace — crop it via clip-path */
 .measure-value.font-digits {
-    margin-top: -0.2em;
-    margin-bottom: -0.15em;
+    font-size: 32px;
+    line-height: 0.55;
+    padding-top: 0.6em;
+    clip-path: inset(0.35em 0 0 0);
+    margin-top: -0.35em;
+    margin-bottom: 2px;
 }
 
 .measure-stats {
