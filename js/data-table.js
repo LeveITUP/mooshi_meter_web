@@ -134,6 +134,7 @@ export class DataTable {
                 resizable: true,
                 suppressHeaderMenuButton: false,
             },
+            rowData: [],
             rowSelection: "multiple",
             enableCellTextSelection: true,
             ensureDomOrder: true,

@@ -316,12 +316,13 @@ body {
 
 .measure-card {
     flex: 1;
-    padding: 8px 16px;
+    padding: 4px 16px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     min-width: 0;
     border-right: 1px solid var(--border);
+    overflow: hidden;
 }
 .measure-card:last-child { border-right: none; }
 
@@ -348,7 +349,7 @@ body {
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.5px;
-    line-height: 1.2;
+    line-height: 1;
     text-align: right;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -368,6 +369,12 @@ body {
 }
 .measure-value.flash {
     animation: value-flash 0.3s ease-out;
+}
+
+/* Digits font has oversized ascender whitespace — crop it */
+.measure-value.font-digits {
+    margin-top: -0.2em;
+    margin-bottom: -0.15em;
 }
 
 .measure-stats {

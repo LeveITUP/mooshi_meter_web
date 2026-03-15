@@ -650,6 +650,10 @@ class App {
     _onFontChanged(value) {
         const family = this._fontMap[value] || this._fontMap.default;
         document.documentElement.style.setProperty("--measure-font", family);
+        // Toggle font-specific class for metrics correction
+        document.querySelectorAll(".measure-value").forEach(el => {
+            el.classList.toggle("font-digits", value === "digits");
+        });
         try { localStorage.setItem("mooshi_measure_font", value); } catch {}
     }
 
