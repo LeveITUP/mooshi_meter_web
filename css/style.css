@@ -853,18 +853,11 @@ button.small {
     font-size: 11px;
 }
 
-.welcome-support {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    border-top: 1px solid var(--border);
-    background: rgba(255,202,40,0.04);
-}
 .bmc-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    margin-left: auto;
     padding: 6px 14px;
     background: #ffca28;
     color: #1a1a2e;
@@ -877,8 +870,6 @@ button.small {
 }
 .bmc-link:hover { background: #ffd54f; transform: translateY(-1px); }
 .bmc-icon { font-size: 16px; }
-.welcome-support-text { font-size: 12px; color: var(--text-dim); }
-
 .welcome-footer {
     display: flex;
     align-items: center;
@@ -1148,10 +1139,6 @@ body.theme-light .welcome-hint {
 body.theme-light .welcome-hint kbd {
     background: rgba(0,0,0,0.05);
     border-color: #d0d0d0;
-}
-body.theme-light .welcome-support {
-    background: rgba(255,202,40,0.08);
-    border-top-color: #e0e0e0;
 }
 body.theme-light .bmc-link { color: #333; }
 
