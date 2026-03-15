@@ -883,7 +883,7 @@ button.small {
 .welcome-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 12px 24px;
     border-top: 1px solid var(--border);
 }
