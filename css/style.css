@@ -1,8 +1,8 @@
 /* MooshiMeter Web — Dark theme (VS Code inspired) */
 
 @font-face {
-    font-family: "DS-Digital";
-    src: url("../fonts/DS-DIGI.TTF") format("truetype");
+    font-family: "Digital Display";
+    src: url("../fonts/DigitalDisplayRegular-ODEO.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
     font-display: swap;

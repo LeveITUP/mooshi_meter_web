@@ -639,7 +639,7 @@ class App {
 
     _fontMap = {
         default: '"Consolas", "Cascadia Code", "JetBrains Mono", monospace',
-        dsdigital: '"DS-Digital", "Consolas", monospace',
+        digital: '"Digital Display", "Consolas", monospace',
         cascadia: '"Cascadia Code", "Consolas", monospace',
         jetbrains: '"JetBrains Mono", "Consolas", monospace',
         fira: '"Fira Code", "Consolas", monospace',
