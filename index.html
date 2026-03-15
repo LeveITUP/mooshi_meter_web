@@ -4,22 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MooshiMeter Web — Browser App for the Mooshimeter Wireless Multimeter</title>
-    <meta name="description" content="Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth. Works on Chrome and Edge.">
-    <meta name="keywords" content="Mooshimeter, multimeter, Web Bluetooth, wireless multimeter, dual channel, data logging, real-time graphing, CSV export, BLE multimeter, Mooshimeter app, Mooshimeter desktop, Mooshimeter web app, serial DMM, WebSerial, voltage, current, resistance, temperature, thermocouple, power measurement">
+    <meta name="description" content="Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth. Also supports 55+ serial multimeters (PeakTech, Voltcraft, UNI-T, Tenma) via WebSerial with USB-serial adapter. Works on Chrome and Edge.">
+    <meta name="keywords" content="Mooshimeter, multimeter, Web Bluetooth, wireless multimeter, dual channel, data logging, real-time graphing, CSV export, BLE multimeter, Mooshimeter app, Mooshimeter desktop, Mooshimeter web app, serial DMM, WebSerial, voltage, current, resistance, temperature, thermocouple, power measurement, PeakTech, Voltcraft, UNI-T, Tenma, Digitek, McVoice, VC820, FS9721, Metex, USB serial multimeter, serial port multimeter, digital multimeter PC, multimeter data logger, multimeter software">
     <meta name="author" content="LevelItUp">
     <link rel="canonical" href="https://mooshimeter.levelitup.tech/">
 
     <!-- Open Graph / Social sharing -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="MooshiMeter Web — Browser App for the Mooshimeter Wireless Multimeter">
-    <meta property="og:description" content="Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, data logging, CSV export, and math channels via Web Bluetooth.">
+    <meta property="og:description" content="Free browser-based companion app for the Mooshimeter wireless multimeter. Also supports 55+ serial DMMs (PeakTech, Voltcraft, UNI-T) via WebSerial. Real-time graphing, data logging, and CSV export.">
     <meta property="og:url" content="https://mooshimeter.levelitup.tech/">
     <meta property="og:site_name" content="MooshiMeter Web">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="MooshiMeter Web — Mooshimeter Wireless Multimeter App">
-    <meta name="twitter:description" content="Free browser app for the Mooshimeter. Real-time graphing, dual-channel logging, CSV export via Web Bluetooth.">
+    <meta name="twitter:description" content="Free browser app for the Mooshimeter and 55+ serial multimeters. Real-time graphing, dual-channel logging, CSV export via Web Bluetooth and WebSerial.">
 
     <!-- Additional SEO -->
     <meta name="robots" content="index, follow">
@@ -33,7 +33,7 @@
         "@type": "WebApplication",
         "name": "MooshiMeter Web",
         "url": "https://mooshimeter.levelitup.tech/",
-        "description": "Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth.",
+        "description": "Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter and 55+ serial multimeters. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth and WebSerial.",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Windows, macOS, Linux, ChromeOS",
         "browserRequirements": "Requires Google Chrome or Microsoft Edge with Web Bluetooth support",
@@ -48,7 +48,9 @@
             "Long-duration logging (24hr+) to IndexedDB with CSV export",
             "Math channels (real power, apparent power, power factor, thermocouple K/J/T)",
             "Auto-ranging with manual override",
-            "Serial DMM support for 55+ multimeters via WebSerial",
+            "Serial DMM support for 55+ multimeters via WebSerial (PeakTech, Voltcraft, UNI-T, Tenma, Digitek, McVoice)",
+            "Supported protocols: Metex 14-byte ASCII, VC820/FS9721 14-byte binary",
+            "USB-serial adapter support (CH340, FTDI, CP2102, PL2303)",
             "Spreadsheet view with virtual scrolling",
             "Keyboard shortcuts"
         ],
@@ -396,6 +398,15 @@
                     <li>Click <strong>Connect</strong> &rarr; <strong>Scan &amp; Connect</strong> and select your device</li>
                     <li>Press <strong>Start</strong> to begin streaming measurements</li>
                 </ol>
+            </div>
+            <div class="welcome-section">
+                <h3>Serial DMM Support <span class="badge-experimental">Experimental</span></h3>
+                <p>Connect 55+ serial multimeters via the <strong>WebSerial API</strong> using a USB-serial adapter. Supported protocols:</p>
+                <ul>
+                    <li><strong>Metex 14-byte ASCII</strong> &mdash; PeakTech, Voltcraft, Digitek, McVoice, and compatible meters</li>
+                    <li><strong>VC820 / FS9721</strong> &mdash; Voltcraft VC-820/840, UNI-T UT-60, Tenma, and compatible 14-byte binary protocol meters</li>
+                </ul>
+                <p style="font-size:12px; color:var(--text-dim); margin-top:4px;">Select your meter model from <strong>Connect</strong> &rarr; <strong>Serial DMM</strong>. Requires Chrome or Edge with WebSerial support and a compatible USB-serial adapter (CH340, FTDI, CP2102, PL2303).</p>
             </div>
             <div class="welcome-hint">Press <kbd>?</kbd> at any time for keyboard shortcuts. Hover over any control for a tooltip.</div>
         </div>
