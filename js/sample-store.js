@@ -58,7 +58,7 @@ export class SampleStore {
     }
 
     /** Start a new logging session. Returns the session ID. */
-    async startSession(ch1Label = "CH1", ch2Label = "CH2") {
+    async startSession(ch1Label = "CH1", ch2Label = "CH2", mathLabel) {
         await this.flush();
 
         const session = {
@@ -69,6 +69,7 @@ export class SampleStore {
             ch1Label,
             ch2Label,
         };
+        if (mathLabel) session.mathLabel = mathLabel;
 
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction("sessions", "readwrite");
@@ -85,16 +86,13 @@ export class SampleStore {
     }
 
     /** Add a sample to the buffer. Non-blocking. */
-    addSample(ch1, ch2) {
+    addSample(ch1, ch2, math) {
         if (this._activeSessionId === null) return;
 
         const t = (performance.now() - this._startTime) / 1000;
-        this._buffer.push({
-            sessionId: this._activeSessionId,
-            t,
-            ch1,
-            ch2,
-        });
+        const sample = { sessionId: this._activeSessionId, t, ch1, ch2 };
+        if (math != null) sample.math = math;
+        this._buffer.push(sample);
         this._sampleCount++;
 
         if (this._buffer.length >= FLUSH_BATCH_SIZE) {
@@ -243,6 +241,7 @@ export class SampleStore {
 
         const ch1Label = session.ch1Label || "CH1";
         const ch2Label = session.ch2Label || "CH2";
+        const mathLabel = session.mathLabel || null;
 
         // Stream samples in chunks to build CSV
         const chunks = [];
@@ -251,7 +250,10 @@ export class SampleStore {
         if (session.title) chunks.push(`Title,${session.title}\n`);
         if (session.note) chunks.push(`Note,${session.note}\n`);
 
-        chunks.push(`Time(s),${ch1Label},${ch2Label}\n`);
+        const header = mathLabel
+            ? `Time(s),${ch1Label},${ch2Label},${mathLabel}\n`
+            : `Time(s),${ch1Label},${ch2Label}\n`;
+        chunks.push(header);
         let lineBuffer = [];
         const CHUNK_LINES = 5000;
 
@@ -264,7 +266,9 @@ export class SampleStore {
                 const cursor = e.target.result;
                 if (cursor) {
                     const s = cursor.value;
-                    lineBuffer.push(`${s.t.toFixed(4)},${s.ch1},${s.ch2}`);
+                    let line = `${s.t.toFixed(4)},${s.ch1},${s.ch2}`;
+                    if (mathLabel) line += `,${s.math != null ? s.math : ""}`;
+                    lineBuffer.push(line);
                     if (lineBuffer.length >= CHUNK_LINES) {
                         chunks.push(lineBuffer.join("\n") + "\n");
                         lineBuffer = [];

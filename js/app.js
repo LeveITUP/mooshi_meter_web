@@ -261,6 +261,11 @@ class App {
             this._sendCmd(`SAMPLING:RATE ${e.target.selectedIndex}`));
         document.getElementById("samp-depth").addEventListener("change", (e) =>
             this._sendCmd(`SAMPLING:DEPTH ${e.target.selectedIndex}`));
+
+        // Display font
+        document.getElementById("measure-font").addEventListener("change", (e) => this._onFontChanged(e.target.value));
+        this._loadFontPref();
+
         document.getElementById("btn-stream").addEventListener("click", () => this._toggleStream());
         document.getElementById("btn-single").addEventListener("click", () => this._sendCmd("SAMPLING:TRIGGER 1"));
 
@@ -493,7 +498,10 @@ class App {
             const sessionId = parseInt(value.split(":")[1]);
             this._tableSource = value;
             showToast("Loading session...", { duration: 1500 });
-            await this.dataTable.setSessionSource(this.sampleStore, sessionId);
+            const sessions = await this.sampleStore.listSessions();
+            const session = sessions.find(s => s.id === sessionId);
+            const hasMath = !!(session && session.mathLabel);
+            await this.dataTable.setSessionSource(this.sampleStore, sessionId, hasMath);
             const count = await this.sampleStore.getSessionSampleCount(sessionId);
             document.getElementById("table-row-count").textContent = `${count.toLocaleString()} rows`;
         }
@@ -502,6 +510,7 @@ class App {
     async _initSampleStore() {
         try {
             await this.sampleStore.open();
+            this._populateTableSources();
         } catch (e) {
             console.warn("IndexedDB not available:", e);
         }
@@ -610,7 +619,8 @@ class App {
         this.mathInput = MATH_INPUTS[sel.selectedIndex] || null;
 
         const mathCard = document.getElementById("measure-math-card");
-        if (!this.mathInput || this.mathInput.id === "off") {
+        const active = this.mathInput && this.mathInput.id !== "off";
+        if (!active) {
             if (mathCard) mathCard.style.display = "none";
             document.getElementById("math-value").textContent = "---";
         } else {
@@ -619,6 +629,38 @@ class App {
             if (labelEl) labelEl.textContent = this.mathInput.label;
         }
         this._resetStats(this._mathStats, "math");
+
+        // Update graph and table math channel
+        if (this.graph) this.graph.setMathActive(active, active ? this.mathInput.label : "Math");
+        if (this.dataTable) this.dataTable.setMathActive(active);
+    }
+
+    // --- Display font ---
+
+    _fontMap = {
+        default: '"Consolas", "Cascadia Code", "JetBrains Mono", monospace',
+        digits: '"Digits", "Consolas", monospace',
+        cascadia: '"Cascadia Code", "Consolas", monospace',
+        jetbrains: '"JetBrains Mono", "Consolas", monospace',
+        fira: '"Fira Code", "Consolas", monospace',
+        source: '"Source Code Pro", "Consolas", monospace',
+        courier: '"Courier New", "Courier", monospace',
+    };
+
+    _onFontChanged(value) {
+        const family = this._fontMap[value] || this._fontMap.default;
+        document.documentElement.style.setProperty("--measure-font", family);
+        try { localStorage.setItem("mooshi_measure_font", value); } catch {}
+    }
+
+    _loadFontPref() {
+        try {
+            const saved = localStorage.getItem("mooshi_measure_font");
+            if (saved && this._fontMap[saved]) {
+                document.getElementById("measure-font").value = saved;
+                this._onFontChanged(saved);
+            }
+        } catch {}
     }
 
     // --- Scan & Connect ---
@@ -694,9 +736,10 @@ class App {
 
         this.meter.addEventListener("sample", (e) => {
             const { ch1, ch2 } = e.detail;
-            if (this.graph) this.graph.addSample(ch1 - this.ch1Offset, ch2 - this.ch2Offset);
-            this._updateMathDisplay(ch1, ch2);
-            this._logSample(ch1, ch2);
+            const mathValue = this._computeMathValue(ch1, ch2);
+            if (this.graph) this.graph.addSample(ch1 - this.ch1Offset, ch2 - this.ch2Offset, mathValue);
+            this._updateMathDisplay(mathValue);
+            this._logSample(ch1, ch2, mathValue);
             this.sampleCount++;
             if (this.sampleCount % 5 === 0) {
                 const el = document.getElementById("sample-count");
@@ -805,35 +848,23 @@ class App {
 
     // --- Math channel ---
 
-    _updateMathDisplay(ch1Raw, ch2Raw) {
-        if (this.displayHeld) return;
+    _computeMathValue(ch1Raw, ch2Raw) {
         const desc = this.mathInput;
-        if (!desc || desc.id === "off") return;
-
-        const el = document.getElementById("math-value");
-        let display = "---";
-        let numericValue = null;
+        if (!desc || desc.id === "off") return null;
 
         switch (desc.id) {
             case "real_power":
-                if (this.meter?.realPower != null) {
-                    numericValue = this.meter.realPower;
-                    display = formatValue(numericValue, "W");
-                }
-                break;
+                return this.meter?.realPower != null ? this.meter.realPower : null;
             case "apparent_power":
-                numericValue = Math.abs(ch1Raw) * Math.abs(ch2Raw);
-                display = formatValue(numericValue, "W");
-                break;
+                return Math.abs(ch1Raw) * Math.abs(ch2Raw);
             case "power_factor":
                 if (this.meter?.realPower != null) {
                     const apparent = Math.abs(ch1Raw) * Math.abs(ch2Raw);
                     if (apparent > 1e-9) {
-                        numericValue = Math.max(-1, Math.min(1, this.meter.realPower / apparent));
-                        display = numericValue.toFixed(4);
+                        return Math.max(-1, Math.min(1, this.meter.realPower / apparent));
                     }
                 }
-                break;
+                return null;
             case "tc_k":
             case "tc_j":
             case "tc_t": {
@@ -844,10 +875,36 @@ class App {
                 else if (this.ch2Input?.isTemp) tempK = ch2Raw;
                 if (tempK === null) tempK = 298.15;
                 if (auxV !== null) {
-                    numericValue = kelvinToCelsius(thermocoupleVoltageToTemp(auxV, tempK, desc.tcType));
-                    display = `${numericValue.toFixed(2)} \u00b0C`;
+                    return kelvinToCelsius(thermocoupleVoltageToTemp(auxV, tempK, desc.tcType));
                 }
-                break;
+                return null;
+            }
+        }
+        return null;
+    }
+
+    _updateMathDisplay(numericValue) {
+        if (this.displayHeld) return;
+        const desc = this.mathInput;
+        if (!desc || desc.id === "off") return;
+
+        const el = document.getElementById("math-value");
+        let display = "---";
+
+        if (numericValue !== null) {
+            switch (desc.id) {
+                case "real_power":
+                case "apparent_power":
+                    display = formatValue(numericValue, "W");
+                    break;
+                case "power_factor":
+                    display = numericValue.toFixed(4);
+                    break;
+                case "tc_k":
+                case "tc_j":
+                case "tc_t":
+                    display = `${numericValue.toFixed(2)} \u00b0C`;
+                    break;
             }
         }
 
@@ -958,7 +1015,8 @@ class App {
         } else {
             const ch1Label = this.ch1Input?.label || "CH1";
             const ch2Label = this.ch2Input?.label || "CH2";
-            await this.sampleStore.startSession(ch1Label, ch2Label);
+            const mathLabel = (this.mathInput && this.mathInput.id !== "off") ? this.mathInput.label : null;
+            await this.sampleStore.startSession(ch1Label, ch2Label, mathLabel);
             this.logging = true;
             btn.innerHTML = '<i class="fa-solid fa-circle-stop"></i> Stop Log';
             btn.classList.add("active");
@@ -968,9 +1026,9 @@ class App {
         }
     }
 
-    _logSample(ch1, ch2) {
+    _logSample(ch1, ch2, math) {
         if (!this.logging) return;
-        this.sampleStore.addSample(ch1, ch2);
+        this.sampleStore.addSample(ch1, ch2, math);
     }
 
     _startLogUpdateTimer() {
@@ -1181,7 +1239,8 @@ class App {
         }
         const ch1Label = this.ch1Input?.label || "CH1";
         const ch2Label = this.ch2Input?.label || "CH2";
-        this.graph.exportCSV(ch1Label, ch2Label);
+        const mathLabel = (this.mathInput && this.mathInput.id !== "off") ? this.mathInput.label : null;
+        this.graph.exportCSV(ch1Label, ch2Label, mathLabel);
         showToast(`Exported ${this.graph.data[0].length} graph points`, { type: "success", duration: 2000 });
     }
 
@@ -1402,7 +1461,7 @@ class App {
 
             // Feed to graph
             if (this.graph && r.value !== null) {
-                this.graph.addSample(r.value, null);
+                this.graph.addSample(r.value, null, null);
             }
 
             this.sampleCount++;
@@ -1414,7 +1473,7 @@ class App {
 
             // Log if active
             if (this.logging && r.value !== null) {
-                this.sampleStore.addSample(r.value, null);
+                this.sampleStore.addSample(r.value, null, null);
             }
         });
 

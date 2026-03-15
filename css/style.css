@@ -1,5 +1,13 @@
 /* MooshiMeter Web — Dark theme (VS Code inspired) */
 
+@font-face {
+    font-family: "Digits";
+    src: url("../fonts/digits.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --bg-primary: #1e1e1e;
     --bg-secondary: #252526;
@@ -16,6 +24,7 @@
     --warning: #cca700;
     --error: #f44747;
     --radius: 6px;
+    --measure-font: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -334,7 +343,7 @@ body {
 }
 
 .measure-value {
-    font-family: "Consolas", "Cascadia Code", "JetBrains Mono", monospace;
+    font-family: var(--measure-font);
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.5px;
@@ -636,6 +645,7 @@ button.small {
 /* AG Grid overrides */
 .ag-ch1-cell { color: var(--ch1-color) !important; }
 .ag-ch2-cell { color: var(--ch2-color) !important; }
+.ag-math-cell { color: #4488ff !important; }
 .ag-row-number { color: var(--text-dim) !important; font-variant-numeric: tabular-nums; }
 
 /* === Custom tooltips === */
@@ -861,6 +871,14 @@ button.small {
 .bmc-link:hover { background: #ffd54f; transform: translateY(-1px); }
 .bmc-icon { font-size: 16px; }
 .welcome-support-text { font-size: 12px; color: var(--text-dim); }
+
+.welcome-credits {
+    padding: 4px 24px 0;
+    text-align: center;
+}
+.welcome-credits small { font-size: 11px; color: var(--text-dim); }
+.welcome-credits a { color: var(--accent); text-decoration: none; }
+.welcome-credits a:hover { text-decoration: underline; }
 
 .welcome-footer {
     display: flex;

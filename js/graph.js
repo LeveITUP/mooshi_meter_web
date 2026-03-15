@@ -15,16 +15,22 @@ export class RealtimeGraph {
         this.startTime = null;
         this.mode = GRAPH_MODE.COMBINED;
 
-        // Shared data store: [timestamps, ch1, ch2]
-        this.data = [[], [], []];
+        // Shared data store: [timestamps, ch1, ch2, math]
+        this.data = [[], [], [], []];
+
+        // Math channel state
+        this.mathActive = false;
+        this.mathLabel = "Math";
 
         // Plot instances
         this.plot = null;
-        this.plot2 = null;  // second plot for split mode
+        this.plot2 = null;   // second plot for split mode
+        this.plot3 = null;   // third plot for math in split mode
 
         // Inner wrappers for split layout
         this._topDiv = null;
         this._botDiv = null;
+        this._mathDiv = null;
 
         this._buildLayout();
         this._initPlots();
@@ -34,7 +40,7 @@ export class RealtimeGraph {
     }
 
     _buildLayout() {
-        // Create two inner divs for split mode (side by side)
+        // Create inner divs for split mode (side by side)
         this.container.innerHTML = "";
 
         this._splitWrap = document.createElement("div");
@@ -49,21 +55,37 @@ export class RealtimeGraph {
         this._botDiv.className = "graph-pane graph-pane-right";
         this._botDiv.style.cssText = "position:relative; height:100%; display:none;";
 
+        this._mathDiv = document.createElement("div");
+        this._mathDiv.className = "graph-pane graph-pane-math";
+        this._mathDiv.style.cssText = "position:relative; height:100%; display:none;";
+
         this._splitWrap.appendChild(this._topDiv);
         this._splitWrap.appendChild(this._botDiv);
+        this._splitWrap.appendChild(this._mathDiv);
         this.container.appendChild(this._splitWrap);
 
         this._applyLayout();
     }
 
     _applyLayout() {
-        if (this.mode === GRAPH_MODE.SPLIT) {
+        const split = this.mode === GRAPH_MODE.SPLIT;
+        const mathSplit = split && this.mathActive;
+
+        if (mathSplit) {
+            this._topDiv.style.width = "33.33%";
+            this._botDiv.style.display = "block";
+            this._botDiv.style.width = "33.33%";
+            this._mathDiv.style.display = "block";
+            this._mathDiv.style.width = "33.34%";
+        } else if (split) {
             this._topDiv.style.width = "50%";
             this._botDiv.style.display = "block";
             this._botDiv.style.width = "50%";
+            this._mathDiv.style.display = "none";
         } else {
             this._topDiv.style.width = "100%";
             this._botDiv.style.display = "none";
+            this._mathDiv.style.display = "none";
         }
     }
 
@@ -125,26 +147,47 @@ export class RealtimeGraph {
         };
     }
 
+    _mathSeries() {
+        return {
+            label: this.mathLabel, scale: "y3", stroke: "#4488ff", width: 1.5,
+            points: { show: false },
+        };
+    }
+
+    _mathAxis() {
+        return {
+            scale: "y3", stroke: "#4488ff", side: 1,
+            grid: { show: false },
+            ticks: { stroke: "#334466", width: 1 },
+            font: "11px monospace", label: this.mathLabel,
+            labelFont: "11px sans-serif", labelSize: 20,
+        };
+    }
+
     _destroyPlots() {
         if (this.plot) { this.plot.destroy(); this.plot = null; }
         if (this.plot2) { this.plot2.destroy(); this.plot2 = null; }
+        if (this.plot3) { this.plot3.destroy(); this.plot3 = null; }
         this._topDiv.innerHTML = "";
         this._botDiv.innerHTML = "";
+        this._mathDiv.innerHTML = "";
     }
 
     _initPlots() {
         this._destroyPlots();
         this._applyLayout();
 
-        const empty = [[], [], []];
-
         switch (this.mode) {
             case GRAPH_MODE.COMBINED: {
-                const opts = this._makePlotOpts(
-                    [this._ch1Series(), this._ch2Series()],
-                    [this._ch1Axis(), this._ch2Axis()],
-                    this._topDiv,
-                );
+                const series = [this._ch1Series(), this._ch2Series()];
+                const axes = [this._ch1Axis(), this._ch2Axis()];
+                const empty = [[], [], []];
+                if (this.mathActive) {
+                    series.push(this._mathSeries());
+                    axes.push(this._mathAxis());
+                    empty.push([]);
+                }
+                const opts = this._makePlotOpts(series, axes, this._topDiv);
                 this.plot = new uPlot(opts, empty, this._topDiv);
                 break;
             }
@@ -159,7 +202,7 @@ export class RealtimeGraph {
             }
             case GRAPH_MODE.CH2_ONLY: {
                 const s = this._ch2Series();
-                s.scale = "y1";  // use left axis when solo
+                s.scale = "y1";
                 const a = this._ch2Axis();
                 a.scale = "y1"; a.side = 3;
                 a.grid = { stroke: "rgba(68,204,68,0.08)", width: 1 };
@@ -182,6 +225,16 @@ export class RealtimeGraph {
                 a2.grid = { stroke: "rgba(68,204,68,0.08)", width: 1 };
                 const opts2 = this._makePlotOpts([s2], [a2], this._botDiv);
                 this.plot2 = new uPlot(opts2, [[], []], this._botDiv);
+
+                if (this.mathActive) {
+                    const sm = this._mathSeries();
+                    sm.scale = "y1";
+                    const am = this._mathAxis();
+                    am.scale = "y1"; am.side = 3;
+                    am.grid = { stroke: "rgba(68,136,255,0.08)", width: 1 };
+                    const opts3 = this._makePlotOpts([sm], [am], this._mathDiv);
+                    this.plot3 = new uPlot(opts3, [[], []], this._mathDiv);
+                }
                 break;
             }
         }
@@ -190,6 +243,15 @@ export class RealtimeGraph {
     setMode(mode) {
         if (mode === this.mode) return;
         this.mode = mode;
+        this._initPlots();
+        this.refresh();
+    }
+
+    /** Enable or disable the math channel on the graph. */
+    setMathActive(active, label) {
+        if (label) this.mathLabel = label;
+        if (active === this.mathActive) return;
+        this.mathActive = active;
         this._initPlots();
         this.refresh();
     }
@@ -204,9 +266,12 @@ export class RealtimeGraph {
         if (this.plot2 && this._botDiv.clientHeight > 0) {
             this.plot2.setSize({ width: this._botDiv.clientWidth, height: this._botDiv.clientHeight });
         }
+        if (this.plot3 && this._mathDiv.clientHeight > 0) {
+            this.plot3.setSize({ width: this._mathDiv.clientWidth, height: this._mathDiv.clientHeight });
+        }
     }
 
-    addSample(ch1, ch2) {
+    addSample(ch1, ch2, math) {
         const now = performance.now() / 1000;
         if (this.startTime === null) this.startTime = now;
         const t = now - this.startTime;
@@ -214,11 +279,13 @@ export class RealtimeGraph {
         this.data[0].push(t);
         this.data[1].push(ch1);
         this.data[2].push(ch2);
+        this.data[3].push(math != null ? math : null);
 
         while (this.data[0].length > this.maxPoints) {
             this.data[0].shift();
             this.data[1].shift();
             this.data[2].shift();
+            this.data[3].shift();
         }
     }
 
@@ -227,7 +294,13 @@ export class RealtimeGraph {
 
         switch (this.mode) {
             case GRAPH_MODE.COMBINED:
-                if (this.plot) this.plot.setData(this.data);
+                if (this.plot) {
+                    if (this.mathActive) {
+                        this.plot.setData([this.data[0], this.data[1], this.data[2], this.data[3]]);
+                    } else {
+                        this.plot.setData([this.data[0], this.data[1], this.data[2]]);
+                    }
+                }
                 break;
             case GRAPH_MODE.CH1_ONLY:
                 if (this.plot) this.plot.setData([this.data[0], this.data[1]]);
@@ -238,19 +311,20 @@ export class RealtimeGraph {
             case GRAPH_MODE.SPLIT:
                 if (this.plot) this.plot.setData([this.data[0], this.data[1]]);
                 if (this.plot2) this.plot2.setData([this.data[0], this.data[2]]);
+                if (this.plot3 && this.mathActive) this.plot3.setData([this.data[0], this.data[3]]);
                 break;
         }
     }
 
     clear() {
-        this.data = [[], [], []];
+        this.data = [[], [], [], []];
         this.startTime = null;
         const empty2 = [[], []];
         const empty3 = [[], [], []];
 
         switch (this.mode) {
             case GRAPH_MODE.COMBINED:
-                if (this.plot) this.plot.setData(empty3);
+                if (this.plot) this.plot.setData(this.mathActive ? [[], [], [], []] : empty3);
                 break;
             case GRAPH_MODE.CH1_ONLY:
             case GRAPH_MODE.CH2_ONLY:
@@ -259,6 +333,7 @@ export class RealtimeGraph {
             case GRAPH_MODE.SPLIT:
                 if (this.plot) this.plot.setData(empty2);
                 if (this.plot2) this.plot2.setData(empty2);
+                if (this.plot3) this.plot3.setData(empty2);
                 break;
         }
     }
@@ -269,16 +344,23 @@ export class RealtimeGraph {
             this.data[0].shift();
             this.data[1].shift();
             this.data[2].shift();
+            this.data[3].shift();
         }
     }
 
     /** Export current graph data as CSV and trigger browser download. */
-    exportCSV(ch1Label = "CH1", ch2Label = "CH2") {
+    exportCSV(ch1Label = "CH1", ch2Label = "CH2", mathLabel) {
         if (this.data[0].length === 0) return;
 
-        const lines = [`Time(s),${ch1Label},${ch2Label}`];
+        const hasMath = this.mathActive && mathLabel;
+        const header = hasMath
+            ? `Time(s),${ch1Label},${ch2Label},${mathLabel}`
+            : `Time(s),${ch1Label},${ch2Label}`;
+        const lines = [header];
         for (let i = 0; i < this.data[0].length; i++) {
-            lines.push(`${this.data[0][i].toFixed(4)},${this.data[1][i]},${this.data[2][i]}`);
+            let line = `${this.data[0][i].toFixed(4)},${this.data[1][i]},${this.data[2][i]}`;
+            if (hasMath) line += `,${this.data[3][i] != null ? this.data[3][i] : ""}`;
+            lines.push(line);
         }
 
         const blob = new Blob([lines.join("\n") + "\n"], { type: "text/csv" });
