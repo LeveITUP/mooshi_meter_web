@@ -1,6 +1,6 @@
 # MooshiMeter Web
 
-A browser-based companion app for the [Mooshimeter](https://moosh.im/) wireless dual-channel multimeter, built with the Web Bluetooth API. This app replaces the original mobile app, letting you control and monitor your meter from any desktop running Chrome or Edge.
+A browser-based companion app for the [Mooshimeter](https://moosh.im/) wireless dual-channel multimeter, built with the Web Bluetooth API. Also supports **55+ serial multimeters** via the WebSerial API with a USB-serial adapter. This app replaces the original mobile app, letting you control and monitor your meter from any desktop running Chrome or Edge.
 
 Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.levelitup.tech)
 
@@ -25,11 +25,38 @@ Live version available here : [mooshimeter.levelitup.tech](https://mooshimeter.l
 - **CSV export** — export live graph data or full IndexedDB sessions
 - **Serial DMM support** *(experimental)* — connect 55+ serial multimeters via WebSerial API (USB-serial adapter required). Supported protocols: Metex14, PeakTech10, Voltcraft14/15, VC820/FS9721
 
+## Serial DMM Support *(Experimental)*
+
+In addition to the Mooshimeter, this app can connect to **55+ serial multimeters** via the [WebSerial API](https://wicg.github.io/serial/) using a USB-serial adapter. Select your meter model from **Connect → Serial DMM**, click **Connect**, and readings will stream into the same graph, table, and logging pipeline.
+
+### Supported Protocols
+
+| Protocol | Format | Supported Meters |
+|---|---|---|
+| **Metex 14-byte ASCII** | Polled (`D\n` request) | PeakTech (3330, 3430, 4390, etc.), Voltcraft (M-3650D, M-4650, ME-42, VC-630/640/650/670), Digitek (DT-9062, DT-9602), McVoice (M-345pro, M-980T), Uni-Trend (UT30A/B/C/D/E) |
+| **Voltcraft 14/15-byte** | Polled ASCII variant | Voltcraft (VC-820, VC-840), Tenma 72-7745 |
+| **VC820 / FS9721** | 14-byte binary (7-segment encoded) | Voltcraft VC-820/840, UNI-T UT-60 series, Tenma 72-series, and compatible FS9721-based meters |
+
+### USB-Serial Adapters
+
+A USB-serial adapter is required to connect your multimeter's serial/optical port to your computer. Compatible chipsets:
+
+- **CH340/CH341** — most common, widely available
+- **FTDI FT232** — reliable, good driver support
+- **CP2102/CP2104** — Silicon Labs
+- **PL2303** — Prolific (use genuine chips for best compatibility)
+
+> **Note:** Most serial multimeters use an optical (infrared) serial interface. You'll need an optical-to-USB cable specific to your meter model, or a generic RS-232 optical probe with a USB-serial adapter.
+
+### Serial Connection Settings
+
+Each meter in the database has preconfigured serial settings (baud rate, data bits, parity, stop bits). These are applied automatically when you select your meter model — no manual configuration needed.
+
 ## Requirements
 
-- **Browser**: Google Chrome or Microsoft Edge (Web Bluetooth support required)
+- **Browser**: Google Chrome or Microsoft Edge (Web Bluetooth and/or WebSerial support required)
 - **OS**: Windows, macOS, Linux, or ChromeOS
-- **Hardware**: Mooshimeter (any hardware revision)
+- **Hardware**: Mooshimeter (any hardware revision) and/or a supported serial multimeter with USB-serial adapter
 
 ## Getting Started
 
