@@ -3,7 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MooshiMeter Web</title>
+    <title>MooshiMeter Web — Browser App for the Mooshimeter Wireless Multimeter</title>
+    <meta name="description" content="Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth. Works on Chrome and Edge.">
+    <meta name="keywords" content="Mooshimeter, multimeter, Web Bluetooth, wireless multimeter, dual channel, data logging, real-time graphing, CSV export, BLE multimeter, Mooshimeter app, Mooshimeter desktop, Mooshimeter web app, serial DMM, WebSerial, voltage, current, resistance, temperature, thermocouple, power measurement">
+    <meta name="author" content="LevelItUp">
+    <link rel="canonical" href="https://mooshimeter.levelitup.tech/">
+
+    <!-- Open Graph / Social sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MooshiMeter Web — Browser App for the Mooshimeter Wireless Multimeter">
+    <meta property="og:description" content="Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, data logging, CSV export, and math channels via Web Bluetooth.">
+    <meta property="og:url" content="https://mooshimeter.levelitup.tech/">
+    <meta property="og:site_name" content="MooshiMeter Web">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="MooshiMeter Web — Mooshimeter Wireless Multimeter App">
+    <meta name="twitter:description" content="Free browser app for the Mooshimeter. Real-time graphing, dual-channel logging, CSV export via Web Bluetooth.">
+
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#007acc">
+    <meta name="application-name" content="MooshiMeter Web">
+
+    <!-- Structured data for rich search results -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "MooshiMeter Web",
+        "url": "https://mooshimeter.levelitup.tech/",
+        "description": "Free browser-based companion app for the Mooshimeter wireless dual-channel multimeter. Real-time graphing, long-duration logging, CSV export, math channels, and auto-ranging via Web Bluetooth.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Windows, macOS, Linux, ChromeOS",
+        "browserRequirements": "Requires Google Chrome or Microsoft Edge with Web Bluetooth support",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Dual-channel measurements (voltage, current, resistance, temperature, diode)",
+            "Real-time graphing with combined, split, and single-channel modes",
+            "Long-duration logging (24hr+) to IndexedDB with CSV export",
+            "Math channels (real power, apparent power, power factor, thermocouple K/J/T)",
+            "Auto-ranging with manual override",
+            "Serial DMM support for 55+ multimeters via WebSerial",
+            "Spreadsheet view with virtual scrolling",
+            "Keyboard shortcuts"
+        ],
+        "softwareHelp": {
+            "@type": "CreativeWork",
+            "url": "https://github.com/LeveITUP/mooshi_meter_web"
+        }
+    }
+    </script>
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.min.css">
     <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
