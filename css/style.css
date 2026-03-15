@@ -883,10 +883,19 @@ button.small {
 .welcome-footer {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     padding: 12px 24px;
     border-top: 1px solid var(--border);
 }
+.welcome-github {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.welcome-github:hover { color: var(--text); }
 .welcome-session-note {
     font-size: 11px;
     color: var(--text-dim);
