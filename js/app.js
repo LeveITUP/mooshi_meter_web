@@ -220,11 +220,13 @@ class App {
             document.getElementById("btn-scan").disabled = true;
             return;
         }
-        navigator.bluetooth.getAvailability().then(avail => {
-            if (!avail) {
-                this._setStatus("Bluetooth is not available on this device.", "error");
-            }
-        });
+        if (navigator.bluetooth.getAvailability) {
+            navigator.bluetooth.getAvailability().then(avail => {
+                if (!avail) {
+                    this._setStatus("Bluetooth is not available on this device.", "error");
+                }
+            }).catch(() => { /* getAvailability not fully supported */ });
+        }
     }
 
     // --- UI Binding ---

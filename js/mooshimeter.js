@@ -125,7 +125,8 @@ export class Mooshimeter extends EventTarget {
     // --- BLE notification handling ---
 
     _handleNotification(event) {
-        const data = new Uint8Array(event.target.value.buffer);
+        const dv = event.target.value;
+        const data = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
         const seqN = data[0] & 0xFF;
 
         if (this._seqIn !== -1 && seqN !== (this._seqIn + 1) % 256) {
@@ -191,6 +192,19 @@ export class Mooshimeter extends EventTarget {
         }
     }
 
+    async _startNotificationsWithRetry(characteristic, retries) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                await characteristic.startNotifications();
+                return;
+            } catch (e) {
+                console.warn(`startNotifications attempt ${attempt}/${retries} failed:`, e);
+                if (attempt === retries) throw e;
+                await sleep(200 * attempt);
+            }
+        }
+    }
+
     // --- Sending commands ---
 
     async sendCommand(cmd) {
@@ -249,7 +263,11 @@ export class Mooshimeter extends EventTarget {
         this._seqOut = (this._seqOut + 1) % 256;
 
         try {
-            await this.serinChar.writeValueWithoutResponse(data);
+            if (this.serinChar.writeValueWithoutResponse) {
+                await this.serinChar.writeValueWithoutResponse(data);
+            } else {
+                await this.serinChar.writeValue(data);
+            }
         } catch (e) {
             console.error("Write failed:", e);
         }
@@ -289,7 +307,9 @@ export class Mooshimeter extends EventTarget {
         this._emit("status", { message: "Subscribing to notifications..." });
         this.seroutChar.addEventListener("characteristicvaluechanged",
             (e) => this._handleNotification(e));
-        await this.seroutChar.startNotifications();
+        await sleep(100);  // allow characteristic setup to settle (iOS BLE browsers)
+        await this._startNotificationsWithRetry(this.seroutChar, 3);
+        await sleep(50);   // allow notification pipeline to stabilize before first write
 
         this._connected = true;
         this._seqOut = 0;
