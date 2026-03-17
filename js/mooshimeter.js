@@ -193,16 +193,41 @@ export class Mooshimeter extends EventTarget {
     }
 
     async _startNotificationsWithRetry(characteristic, retries) {
+        const props = characteristic.properties;
+        console.log("Characteristic properties:", {
+            notify: props?.notify, indicate: props?.indicate,
+            read: props?.read, write: props?.write,
+        });
+
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
                 await characteristic.startNotifications();
+                console.log(`startNotifications succeeded on attempt ${attempt}`);
                 return;
             } catch (e) {
                 console.warn(`startNotifications attempt ${attempt}/${retries} failed:`, e);
-                if (attempt === retries) throw e;
-                await sleep(200 * attempt);
+                if (attempt < retries) {
+                    await sleep(500 * attempt);
+                }
             }
         }
+
+        // Fallback: manually write the CCCD descriptor (0x2902)
+        console.log("Attempting manual CCCD descriptor write fallback...");
+        try {
+            const cccd = await characteristic.getDescriptor(0x2902);
+            // Try indications (0x0002) if indicate is supported, else notifications (0x0001)
+            const value = props?.indicate && !props?.notify
+                ? new Uint8Array([2, 0])
+                : new Uint8Array([1, 0]);
+            await cccd.writeValue(value);
+            console.log("CCCD descriptor write succeeded");
+            return;
+        } catch (cccdErr) {
+            console.warn("CCCD fallback failed:", cccdErr);
+        }
+
+        throw new Error("Failed to enable notifications after all attempts");
     }
 
     // --- Sending commands ---
@@ -307,9 +332,9 @@ export class Mooshimeter extends EventTarget {
         this._emit("status", { message: "Subscribing to notifications..." });
         this.seroutChar.addEventListener("characteristicvaluechanged",
             (e) => this._handleNotification(e));
-        await sleep(100);  // allow characteristic setup to settle (iOS BLE browsers)
-        await this._startNotificationsWithRetry(this.seroutChar, 3);
-        await sleep(50);   // allow notification pipeline to stabilize before first write
+        await sleep(300);  // allow characteristic setup to settle (iOS BLE browsers)
+        await this._startNotificationsWithRetry(this.seroutChar, 4);
+        await sleep(100);  // allow notification pipeline to stabilize before first write
 
         this._connected = true;
         this._seqOut = 0;
